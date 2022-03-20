@@ -1,0 +1,39 @@
+WHITESPACE = _{ " " | "#" ~ (!("\n") ~ ANY)* ~ "\n"+ }
+
+nl = _{ NEWLINE* }
+
+alpha = @{ 'a'..'z' | 'A'..'Z' }
+digit = @{ '0'..'9' }
+
+// digit may not be first char
+ident = @{
+  (alpha | "_") ~ (alpha | digit | "_")* 
+}
+
+integer = @{ ("-")? ~ digit+ }
+
+float = @{ ("-")? ~ ( digit+ ~ "." ~ digit* | "." ~ digit+ ) }
+
+
+string = ${ "\"" ~ inner ~ "\"" }
+inner = @{ char* }
+char = _{
+    !("\"" | "\\") ~ ANY
+    | "\\" ~ ("\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t")
+    | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
+}
+
+
+tuple = { "(" ~ nl ~ expr? ~ ("," ~ nl ~ expr)* ~ nl ~ ")" }
+
+expr = _{ tuple | integer | string | float | ident }
+
+command = { ident ~ expr* }
+
+chain = _{ nl ~ ">>" ~ nl ~ subflow }
+
+subflow = _{ command ~ chain? }
+
+flow = { subflow }
+
+file = _{ SOI ~ nl ~ flow ~ nl ~ EOI }
