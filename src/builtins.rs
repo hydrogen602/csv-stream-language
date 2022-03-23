@@ -5,7 +5,7 @@ use crate::commands::{Argument, GenericIterBox, RowType};
 pub fn read(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     let file = if let [Argument::String(file)] = &args[..] { file } 
     else { 
-        unreachable!();
+        panic!("Invalid arguments: {:?}", args);
     };
 
     let reader = csv::ReaderBuilder::new().has_headers(false).flexible(true).from_path(file).expect("Could not open file for reading");
@@ -20,7 +20,7 @@ pub fn read(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
 pub fn write(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     let file = if let [Argument::String(file)] = &args[..] { file } 
     else { 
-        unreachable!();
+        panic!("Invalid arguments: {:?}", args);
     };
 
     let mut writer = csv::WriterBuilder::new().flexible(true).from_path(file).expect("Could not open file for writing");
@@ -33,43 +33,11 @@ pub fn write(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     }))
 }
 
-// pub enum DropIterator<I: Iterator> {
-//     HeadDrop(I),
-//     //TailDrop(I, queues::CircularBuffer<>)
-// }
-
-// impl<I: Iterator> Iterator for DropIterator<I> {
-//     type Item = I::Item;
-
-//     fn next(&mut self) -> Option<Self::Item> {
-//         match self {
-//             Self::HeadDrop(it) => { it.next() }
-//         }
-//     }
-// }
-
-// impl<I: Iterator> DropIterator<I> {
-//     fn head(it: GenericIterBox, skip_rows: usize) -> Self {
-//         for _ in 0..skip_rows {
-//             if let None = it.next() {
-//                 return Self::HeadDrop(iter::empty());
-//             }
-//         }
-//         Self::HeadDrop(*it)
-//     }
-// }
-
 pub fn drop(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     if let [Argument::Enum(op), Argument::Int(n)] = &args[..] {
         match op.as_str() {
             "head" => {
-                let x = input.skip(*n as usize);
-                // for _ in 0..*n {
-                //     if let None = input.next() {
-                //         break;
-                //     }
-                // }
-                Box::new(x) //input
+                Box::new(input.skip(*n as usize)) //input
             },
             "tail" => {
                 todo!("tail not yet supported");
@@ -77,7 +45,7 @@ pub fn drop(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
             arg => panic!("Invalid argument for drop: {}", arg)
         }
     } else {
-        unreachable!();
+        panic!("Invalid arguments: {:?}", args);
     }
 }
 
@@ -112,14 +80,14 @@ pub fn columns(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
                 index
             }
             else {
-                unreachable!();
+                panic!("Invalid arguments: {:?}", args);
             }
         }).collect();
 
         Box::new( ColumnShuffle::new(input, order) )
     }
     else {
-        unreachable!();
+        panic!("Invalid arguments: {:?}", args);
     }
 }
 

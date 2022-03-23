@@ -1,8 +1,4 @@
 use core::fmt;
-use std::{collections::HashMap};
-
-use crate::builtins;
-
 
 #[derive(Debug)]
 pub enum Argument {
@@ -12,43 +8,6 @@ pub enum Argument {
     Enum(String),
     Tuple(Vec<Argument>)
 }
-
-pub struct Namespace {
-    commands: HashMap<String, Command>
-}
-
-impl Default for Namespace {
-    fn default() -> Self {
-        let mut n = Namespace { commands: HashMap::new() };
-        let mut helper = |s: &str, f| n.commands.insert(s.into(), f);
-
-        helper("read", builtins::read);
-        helper("drop", builtins::drop);
-        helper("print", builtins::print);
-        helper("columns", builtins::columns);
-        helper("write", builtins::write);
-
-        n
-    }
-}
-
-impl Namespace {
-    pub fn get_command(&self, s: &str) -> Option<&Command> {
-        self.commands.get(s)
-    }
-}
-
-// struct FlowIter<T> {
-
-// }
-
-// impl<T> Iterator for FlowIter<T> {
-//     type Item = T;
-
-//     fn next(&mut self) -> Option<Self::Item> {
-
-//     }
-// }
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum DataTypes {
@@ -93,11 +52,5 @@ impl From<f64> for DataTypes {
 
 pub type RowType = Vec<DataTypes>;
 pub type GenericIterBox = Box<dyn Iterator<Item=RowType>>;
-
-// pub enum Command {
-//     Begin(fn(&Vec<Argument>) -> GenericIterBox),
-//     Middle(fn(&Vec<Argument>, GenericIterBox) -> GenericIterBox),
-//     End(fn(&Vec<Argument>, GenericIterBox))
-// }
 
 pub type Command = fn(&Vec<Argument>, GenericIterBox) -> GenericIterBox;

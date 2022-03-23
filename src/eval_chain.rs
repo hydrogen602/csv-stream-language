@@ -1,7 +1,5 @@
 use std::iter::Empty;
-
 use crate::commands::{Command, Argument, GenericIterBox};
-
 
 pub struct Chain<'a> {
     chain: Vec<(&'a Command, Vec<Argument>)>

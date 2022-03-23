@@ -5,6 +5,7 @@ extern crate pest_derive;
 mod commands;
 mod eval_chain;
 mod builtins;
+mod namespace;
 
 use std::fs::read_to_string;
 
@@ -13,7 +14,7 @@ use pest::Parser;
 use pest::error::Error;
 use pest::iterators::{Pairs, Pair};
 
-use crate::commands::Namespace;
+use crate::namespace::Namespace;
 use crate::eval_chain::Chain;
 
 
