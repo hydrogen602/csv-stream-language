@@ -24,8 +24,9 @@ impl Default for Namespace {
 
         helper("read", Command::Begin(builtins::read));
         helper("drop", Command::Middle(builtins::drop));
-        helper("print", Command::End(builtins::print));
+        helper("print", Command::Middle(builtins::print));
         helper("columns", Command::Middle(builtins::columns));
+        helper("write", Command::End(builtins::write));
 
         n
     }

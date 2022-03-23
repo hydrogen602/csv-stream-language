@@ -8,13 +8,27 @@ pub fn read(args: &Vec<Argument>) -> GenericIterBox {
         unreachable!();
     };
 
-    let reader = csv::ReaderBuilder::new().has_headers(false).flexible(true).from_path(file).expect("Could not read file");
+    let reader = csv::ReaderBuilder::new().has_headers(false).flexible(true).from_path(file).expect("Could not open file for reading");
 
     let x = reader.into_records().map(|x| x.expect("Read failed"));
 
     let it = x.map(|sr: StringRecord| { sr.into_iter().map(|s| s.into()).collect() });
 
     Box::new(it)
+}
+
+pub fn write(args: &Vec<Argument>, input: GenericIterBox) {
+    let file = if let [Argument::String(file)] = &args[..] { file } 
+    else { 
+        unreachable!();
+    };
+
+    let mut writer = csv::WriterBuilder::new().flexible(true).from_path(file).expect("Could not open file for writing");
+
+    for row in input {
+        let x = row.into_iter().map(|x| x.to_string());
+        writer.write_record(x).expect("Write failed");
+    }
 }
 
 // pub enum DropIterator<I: Iterator> {
@@ -107,14 +121,14 @@ pub fn columns(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     }
 }
 
-pub fn print(args: &Vec<Argument>, input: GenericIterBox) {
+pub fn print(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     if args.len() > 0 {
         panic!( "Invalid arguments: {:?}" , args );
     }
 
-    for row in input {
+    Box::new(input.map(|row| {
         print!("[");
-        for (i, elem) in row.into_iter().enumerate() {
+        for (i, elem) in row.iter().enumerate() {
             if i == 0 {
                 print!("{}", elem);
             }
@@ -123,6 +137,8 @@ pub fn print(args: &Vec<Argument>, input: GenericIterBox) {
             }
         }
         println!("]");
-    }
+
+        row
+    }))
 }
 

@@ -33,6 +33,10 @@ impl Chain<'_> {
                 }
             }
         }
+
+        if let Some(stream) = current_data_stream {
+            for _ in stream {}  // evaluate the iterator
+        }
     }
 }
 
