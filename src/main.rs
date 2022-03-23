@@ -4,6 +4,7 @@ extern crate pest_derive;
 
 mod commands;
 mod eval_chain;
+mod builtins;
 
 use std::fs::read_to_string;
 
@@ -33,7 +34,7 @@ fn arg_parser(pair: Pair<Rule>) -> Argument {
 
     match pair.as_rule() {
         Rule::string => {
-            println!("{:?}", pair);
+            //println!("{:?}", pair);
             Argument::String(pair.into_inner().next().unwrap().as_str().into())
         },
         Rule::integer => Argument::Int(content.parse().expect("integer rule wrong")),
@@ -65,14 +66,14 @@ fn main() {
 
         let f_name = func_name.as_str();
 
-        println!("{:?} {:?}", f_name, args);
+        //println!("{:?} {:?}", f_name, args);
 
         let cmd = cmds.get_command(f_name).expect(&format!("Command {} not found", f_name));
 
         chain.push(cmd,args);
     }
 
-    println!("Parse done");
+    //println!("Parse done");
 
     chain.execute();
 }

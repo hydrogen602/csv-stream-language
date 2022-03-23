@@ -1,2 +1,0 @@
-read "test.fluss" >> drop head 2 >> print
-# parse (date, text, money, money) >> 
