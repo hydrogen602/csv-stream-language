@@ -3,6 +3,7 @@ extern crate pest;
 extern crate pest_derive;
 
 mod commands;
+mod eval_chain;
 
 use std::fs::read_to_string;
 
@@ -10,6 +11,9 @@ use commands::Argument;
 use pest::Parser;
 use pest::error::{Error, ErrorVariant};
 use pest::iterators::{Pairs, Pair};
+
+use crate::commands::Namespace;
+use crate::eval_chain::Chain;
 
 
 #[derive(Parser)]
@@ -50,15 +54,25 @@ fn main() {
     let flow = pairs.next().unwrap();
     // println!("{:?}", flow);
 
+    let cmds = Namespace::default();
+
+    let mut chain = Chain::default();
+
     for command in flow.into_inner() {
         let mut parts = command.into_inner();
         let func_name = parts.next().unwrap();
         let args: Vec<_> = parts.map(arg_parser).collect();
 
-        println!("{:?} {:?}", func_name.as_str(), args);
+        let f_name = func_name.as_str();
 
+        println!("{:?} {:?}", f_name, args);
 
+        let cmd = cmds.get_command(f_name).expect(&format!("Command {} not found", f_name));
+
+        chain.push(cmd,args);
     }
 
     println!("Parse done");
+
+    chain.execute();
 }
