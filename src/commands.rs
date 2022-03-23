@@ -25,6 +25,7 @@ impl Default for Namespace {
         helper("read", Command::Begin(builtins::read));
         helper("drop", Command::Middle(builtins::drop));
         helper("print", Command::End(builtins::print));
+        helper("columns", Command::Middle(builtins::columns));
 
         n
     }
@@ -48,7 +49,7 @@ impl Namespace {
 //     }
 // }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum DataTypes {
     String(String),
     Int(i32),
@@ -89,7 +90,8 @@ impl From<f64> for DataTypes {
     }
 }
 
-pub type GenericIterBox = Box<dyn Iterator<Item=Vec<DataTypes>>>;
+pub type RowType = Vec<DataTypes>;
+pub type GenericIterBox = Box<dyn Iterator<Item=RowType>>;
 
 pub enum Command {
     Begin(fn(&Vec<Argument>) -> GenericIterBox),

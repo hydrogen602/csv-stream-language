@@ -1,6 +1,6 @@
 use csv::StringRecord;
 
-use crate::commands::{Argument, GenericIterBox};
+use crate::commands::{Argument, GenericIterBox, RowType};
 
 pub fn read(args: &Vec<Argument>) -> GenericIterBox {
     let file = if let [Argument::String(file)] = &args[..] { file } 
@@ -61,6 +61,48 @@ pub fn drop(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
             arg => panic!("Invalid argument for drop: {}", arg)
         }
     } else {
+        unreachable!();
+    }
+}
+
+pub struct ColumnShuffle<I: Iterator<Item=RowType>> {
+    it: I,
+    order: Vec<usize>
+}
+
+impl<I: Iterator<Item=RowType>> ColumnShuffle<I> {
+    pub fn new(it: I, order: Vec<usize>) -> Self {
+        ColumnShuffle { it, order }
+    }
+}
+
+impl<I: Iterator<Item=RowType>> Iterator for ColumnShuffle<I> {
+    type Item = I::Item;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.it.next().map(|row| {
+            self.order.iter().map(|&i| row[i].clone()).collect()
+        })
+    }
+}
+
+pub fn columns(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
+    if let [Argument::Tuple(order_arg)] = &args[..] {
+        let order: Vec<_> = order_arg.into_iter().map(|e| {
+            if let Argument::Int(n) = *e {
+                if n <= 0 { panic!("Index columns start at 1"); }
+                let index = (n - 1) as usize; // n > 0, so n-1 >= 0
+
+                index
+            }
+            else {
+                unreachable!();
+            }
+        }).collect();
+
+        Box::new( ColumnShuffle::new(input, order) )
+    }
+    else {
         unreachable!();
     }
 }
