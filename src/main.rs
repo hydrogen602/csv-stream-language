@@ -10,7 +10,7 @@ use std::fs::read_to_string;
 
 use commands::Argument;
 use pest::Parser;
-use pest::error::{Error, ErrorVariant};
+use pest::error::Error;
 use pest::iterators::{Pairs, Pair};
 
 use crate::commands::Namespace;

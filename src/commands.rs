@@ -22,11 +22,11 @@ impl Default for Namespace {
         let mut n = Namespace { commands: HashMap::new() };
         let mut helper = |s: &str, f| n.commands.insert(s.into(), f);
 
-        helper("read", Command::Begin(builtins::read));
-        helper("drop", Command::Middle(builtins::drop));
-        helper("print", Command::Middle(builtins::print));
-        helper("columns", Command::Middle(builtins::columns));
-        helper("write", Command::End(builtins::write));
+        helper("read", builtins::read);
+        helper("drop", builtins::drop);
+        helper("print", builtins::print);
+        helper("columns", builtins::columns);
+        helper("write", builtins::write);
 
         n
     }
@@ -94,8 +94,10 @@ impl From<f64> for DataTypes {
 pub type RowType = Vec<DataTypes>;
 pub type GenericIterBox = Box<dyn Iterator<Item=RowType>>;
 
-pub enum Command {
-    Begin(fn(&Vec<Argument>) -> GenericIterBox),
-    Middle(fn(&Vec<Argument>, GenericIterBox) -> GenericIterBox),
-    End(fn(&Vec<Argument>, GenericIterBox))
-}
+// pub enum Command {
+//     Begin(fn(&Vec<Argument>) -> GenericIterBox),
+//     Middle(fn(&Vec<Argument>, GenericIterBox) -> GenericIterBox),
+//     End(fn(&Vec<Argument>, GenericIterBox))
+// }
+
+pub type Command = fn(&Vec<Argument>, GenericIterBox) -> GenericIterBox;

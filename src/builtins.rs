@@ -2,7 +2,7 @@ use csv::StringRecord;
 
 use crate::commands::{Argument, GenericIterBox, RowType};
 
-pub fn read(args: &Vec<Argument>) -> GenericIterBox {
+pub fn read(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     let file = if let [Argument::String(file)] = &args[..] { file } 
     else { 
         unreachable!();
@@ -14,10 +14,10 @@ pub fn read(args: &Vec<Argument>) -> GenericIterBox {
 
     let it = x.map(|sr: StringRecord| { sr.into_iter().map(|s| s.into()).collect() });
 
-    Box::new(it)
+    Box::new(input.chain(it))
 }
 
-pub fn write(args: &Vec<Argument>, input: GenericIterBox) {
+pub fn write(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     let file = if let [Argument::String(file)] = &args[..] { file } 
     else { 
         unreachable!();
@@ -25,10 +25,12 @@ pub fn write(args: &Vec<Argument>, input: GenericIterBox) {
 
     let mut writer = csv::WriterBuilder::new().flexible(true).from_path(file).expect("Could not open file for writing");
 
-    for row in input {
-        let x = row.into_iter().map(|x| x.to_string());
+    Box::new(input.map(move |row| {
+        let x = row.iter().map(|x| x.to_string());
         writer.write_record(x).expect("Write failed");
-    }
+
+        row
+    }))
 }
 
 // pub enum DropIterator<I: Iterator> {

@@ -1,3 +1,5 @@
+use std::iter::Empty;
+
 use crate::commands::{Command, Argument, GenericIterBox};
 
 
@@ -12,31 +14,14 @@ impl<'a> Chain<'a> {
 }
 
 impl Chain<'_> {
-    pub fn execute(&self) {
-        let mut current_data_stream: Option<GenericIterBox> = None;
+    pub fn execute(&self) -> usize {
+        let stream: GenericIterBox = self.chain.iter().fold(
+            Box::new(Empty::default()), 
+            |stream, 
+                (cmd, args)| 
+                    cmd(args, stream));
 
-        for (cmd, args) in self.chain.iter() {
-            match cmd {
-                Command::Begin(f) => {
-                    if current_data_stream.is_some() {
-                        panic!("Data stream already exists");
-                    }
-
-                    current_data_stream = Some( f(args) );
-                },
-                Command::Middle(f) => {
-                    current_data_stream = Some( f(args, current_data_stream.expect("No data stream to process")) );
-                },
-                Command::End(f) => {
-                    f(args, current_data_stream.expect("No data stream to process"));
-                    current_data_stream = None;
-                }
-            }
-        }
-
-        if let Some(stream) = current_data_stream {
-            for _ in stream {}  // evaluate the iterator
-        }
+        stream.count()  // consume the iterator
     }
 }
 
