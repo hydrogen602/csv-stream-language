@@ -1,6 +1,6 @@
 use csv::StringRecord;
 
-use crate::commands::{Argument, GenericIterBox, RowType};
+use crate::commands::{Argument, GenericIterBox, RowType, DataTypes};
 
 pub fn read(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     let file = if let [Argument::String(file)] = &args[..] { file } 
@@ -110,5 +110,54 @@ pub fn print(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
 
         row
     }))
+}
+
+pub fn parse(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
+    // NaiveDate::parse_from_str
+    if let [Argument::Tuple(args)] = &args[..] {
+        let types: Vec<String> = args.iter().map(|e| {
+            if let Argument::Enum(ident) = e {
+                ident.into()
+            }
+            else {
+                panic!("Invalid arguments: {:?}", args);
+            }
+        }).collect();
+        // let types = vec![1];
+
+        Box::new(input.map(move |row| {
+            //let x = types;
+            if row.len() != types.len() {
+                panic!("Error: Parse arguments don't match columns")
+            }
+
+            row.into_iter().zip(types.iter()).map(|(data, ty)| {
+                match ty.as_str() {
+                    "int" => DataTypes::Int(data.into()),
+                    "float" => DataTypes::Float(data.into()),
+                    "string" => DataTypes::String(data.into()),
+                    "date" => DataTypes::NaiveDate(data.into()),
+                    _ => panic!("unknown type: {}", ty)
+                }
+            }).collect()
+        }))
+    }
+    else {
+        panic!("Invalid arguments: {:?}", args);
+    }
+}
+
+
+pub mod summary {
+    // use super::*;
+    // pub fn sum(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
+    //     //input.ma
+    // }
+}
+
+pub mod higher_order {
+
+    // pub fn map(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
+
 }
 

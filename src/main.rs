@@ -6,6 +6,7 @@ mod commands;
 mod eval_chain;
 mod builtins;
 mod namespace;
+mod util;
 
 use std::fs::read_to_string;
 

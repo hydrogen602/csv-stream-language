@@ -1,2 +1,4 @@
-read "data.csv" >> drop head 2 >> columns (4, 1) >> print >> write "out.csv"
+read "data.csv" >> drop head 2 >> columns (4, 1) >> 
+    print >> parse (float, date) >> print >> write "out.csv"
+
 # parse (date, text, money, money) >> 
