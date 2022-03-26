@@ -1,6 +1,20 @@
 use core::fmt;
+use std::{str::FromStr, string::ParseError};
 
 use chrono::NaiveDate;
+
+#[derive(Debug)]
+pub enum MatchPattern {
+    String(String)
+}
+
+// impl FromStr for MatchPattern {
+//     type Err = ParseError;
+
+//     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        
+//     }
+// }
 
 #[derive(Debug)]
 pub enum Argument {
@@ -8,8 +22,18 @@ pub enum Argument {
     Int(i32),
     Float(f64),
     Enum(String),
+    Rule(MatchPattern, Box<Argument>),
     Tuple(Vec<Argument>)
 }
+
+
+// impl TryFrom<Argument> for DataTypes {
+//     type Error = ;
+
+//     fn try_from(value: Argument) -> Result<Self, Self::Error> {
+        
+//     }
+// }
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum DataTypes {
@@ -36,7 +60,7 @@ impl From<DataTypes> for i32 {
             DataTypes::String(s) => s.parse().expect(&format!("could not parse {} as int", s)),
             DataTypes::Int(i) => i,
             DataTypes::Float(f) => f as i32,
-            DataTypes::NaiveDate(date) => panic!("could not parse date as int")
+            DataTypes::NaiveDate(_) => panic!("could not parse date as int")
         }
     }
 }
@@ -47,7 +71,7 @@ impl From<DataTypes> for f64 {
             DataTypes::String(s) => s.parse().expect(&format!("could not parse {} as float", s)),
             DataTypes::Int(i) => i as f64,
             DataTypes::Float(f) => f,
-            DataTypes::NaiveDate(date) => panic!("could not parse date as float")
+            DataTypes::NaiveDate(_) => panic!("could not parse date as float")
         }
     }
 }

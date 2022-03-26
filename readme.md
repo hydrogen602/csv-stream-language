@@ -9,7 +9,28 @@ Note: `<arg>` is a required argument, `[arg]` is optional
   - Drop `count` rows from the beginning (aka top of table)
 - `print [header: str]`
   - Print out the current data stream. If header is specified, print the string before the data.
-- `columns <config: tuple[int]>`
+- `columns <order: tuple[int]>`
   - Reorder or drop columns. Columns are 1-indexed, so for example, if we have 3 columns and specify `(3,2,1)`, we reverse the order of columns.
-- `parse <config: tuple[ident]>`
+- `parse <types: tuple[ident]>`
   - Parse strings to data types like integers, decimal numbers, or dates. Valid elements of `config` are: `int` for integers, `float` for decimal numbers, and `date` for dates.
+- `classify <column: int> <rules: tuple[rule]>`
+  - Classify the elements in specified column according to a given set of rules. If more than one rule apply, the first matching rule is used. The produced classification is added as a column to the right of the table (i.e. appended to each row). If no rule matches, it will use 
+
+
+
+# Syntax
+## Match Rules
+Rules follow the syntax: `<match pattern> => <value>`
+- Value can be a string, int, or float
+- If nothing matches, a default value is used which is 0 or an empty string.
+
+### Strings
+- String matching is case-insensitive
+- `"foo" => "This is foo"`
+  - Matches `"foo"` exactly
+- `"foo*" => "This is foo"`
+  - Matches strings starting with `"foo"`
+- `"*foo" => "This is foo"`
+  - Matches strings ending with `"foo"`
+- `"*foo*" => "This is foo"`
+  - Matches strings containing `"foo"`

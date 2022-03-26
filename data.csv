@@ -1,6 +1,7 @@
 Transactions for March 2022
 Date,Transaction,Change,Balance
-2022-03-01,Food,-10.40,130.42
+2022-03-01,Food Store A,-10.40,130.42
 2022-03-02,Income,100.41,230.83
-2022-03-03,Something,-10.00,220.83
+2022-03-02,Food Market B,-5.00,225.83
+2022-03-03,Something,-10.00,215.83
 

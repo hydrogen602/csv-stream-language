@@ -10,9 +10,9 @@ mod util;
 
 use std::fs::read_to_string;
 
-use commands::Argument;
+use commands::{Argument, MatchPattern};
 use pest::Parser;
-use pest::error::Error;
+use pest::error::{Error, ErrorVariant};
 use pest::iterators::{Pairs, Pair};
 
 use crate::namespace::Namespace;
@@ -25,7 +25,21 @@ struct IdentParser;
 
 fn parse_fail<'i>(e: Error<Rule>) -> Pairs<'i, Rule> {
     eprintln!("{}", e);
+    let x = e.variant;
+    match x {
+        ErrorVariant::ParsingError { positives: p, negatives: n } => {
+            eprintln!("Positives: {:?}", p);
+            eprintln!("Negatives: {:?}", n);
+        }
+        ErrorVariant::CustomError { message: m } => {
+            eprintln!("msg: {}", m);
+        }
+    }
     panic!("");
+}
+
+fn match_parser(pair: Pair<Rule>) -> MatchPattern {
+    MatchPattern::String(pair.into_inner().next().unwrap().as_str().into())
 }
 
 fn arg_parser(pair: Pair<Rule>) -> Argument {
@@ -43,6 +57,10 @@ fn arg_parser(pair: Pair<Rule>) -> Argument {
         Rule::float => Argument::Float(content.parse().expect("float rule wrong")),
         Rule::ident => Argument::Enum(content.into()),
         Rule::tuple => Argument::Tuple(pair.into_inner().map(arg_parser).collect()),
+        Rule::rule => {
+            let mut it = pair.into_inner();
+            Argument::Rule(it.next().map(match_parser).unwrap(), Box::new(it.next().map(arg_parser).unwrap()))
+        },
         r => {
             unreachable!("Got rule {:?}", r);
         }

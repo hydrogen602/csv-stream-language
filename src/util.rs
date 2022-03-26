@@ -1,4 +1,16 @@
-use std::mem;
+use core::fmt;
+use std::{mem, error::Error};
+
+#[derive(Debug, Clone)]
+pub struct ParseError(String);
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "ParseError: {}", self.0)
+    }
+}
+
+impl Error for ParseError {}
 
 /// TODO: how to get accumulator
 pub struct MapFold<I, F, G, C>

@@ -1,6 +1,6 @@
 use csv::StringRecord;
 
-use crate::commands::{Argument, GenericIterBox, RowType, DataTypes};
+use crate::commands::{Argument, GenericIterBox, RowType, DataTypes, MatchPattern};
 
 pub fn read(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     let file = if let [Argument::String(file)] = &args[..] { file } 
@@ -147,6 +147,35 @@ pub fn parse(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     }
 }
 
+pub fn classify(args: &Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
+    let (index, rules): (usize, Vec<(MatchPattern, Box<Argument>)>) = if let [Argument::Int(index), Argument::Tuple(args)] = &args[..] {
+        assert!(index > &0, "index has to be greater than 0");
+
+        (*index as usize, args.into_iter().map(|e| {
+            if let Argument::Rule(r, val) = e {
+                (r, val)
+            }
+            else {
+                panic!("Invalid arguments: {:?}", args);
+            }
+        }).collect())
+    }
+    else {
+        panic!("Invalid arguments: {:?}", args);
+    };
+
+    Box::new(input.into_iter().map(move |row| {
+        let val = &row[index];
+
+        let m = rules.iter().find(|r| )
+
+        // for r in rules.iter() {
+
+        // }
+
+        row
+    }))
+}
 
 pub mod summary {
     // use super::*;

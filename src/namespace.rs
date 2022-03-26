@@ -1,5 +1,5 @@
 use core::fmt;
-use std::collections::HashMap;
+use std::{collections::HashMap, error::Error};
 
 use crate::{commands::Command, builtins};
 
@@ -33,6 +33,8 @@ impl fmt::Display for CommandExistsError {
         write!(f, "Command exists already")
     }
 }
+
+impl Error for CommandExistsError {}
 
 impl Namespace {
     pub fn get_command(&self, s: &str) -> Option<&Command> {

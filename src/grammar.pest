@@ -5,6 +5,8 @@ nl = _{ NEWLINE* }
 alpha = @{ 'a'..'z' | 'A'..'Z' }
 digit = @{ '0'..'9' }
 
+// Expressions
+
 // digit may not be first char
 ident = @{
   (alpha | "_") ~ (alpha | digit | "_")* 
@@ -14,7 +16,6 @@ integer = @{ ("-")? ~ digit+ }
 
 float = @{ ("-")? ~ ( digit+ ~ "." ~ digit* | "." ~ digit+ ) }
 
-
 string = ${ "\"" ~ inner ~ "\"" }
 inner = @{ char* }
 char = _{
@@ -23,10 +24,15 @@ char = _{
     | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
 }
 
+rule = { string ~ "=>" ~ data_types }
+
+data_types = _{ string | float | integer } // date is technically a data type
 
 tuple = { "(" ~ nl ~ expr? ~ ("," ~ nl ~ expr)* ~ nl ~ ")" }
 
-expr = _{ tuple | integer | string | float | ident }
+expr = _{ tuple | rule | integer | string | float | ident }
+
+// Main structure
 
 command = { ident ~ expr* }
 
