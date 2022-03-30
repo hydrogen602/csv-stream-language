@@ -12,9 +12,9 @@ impl<'a> Chain<'a> {
 }
 
 impl Chain<'_> {
-    pub fn execute(&self) -> usize {
-        let stream: GenericIterBox = self.chain.iter().fold(
-            Box::new(Empty::default()), 
+    pub fn execute(self: Self) -> usize {
+        let stream: GenericIterBox = self.chain.into_iter().fold(
+            Box::new(Empty::default()),
             |stream, 
                 (cmd, args)| 
                     cmd(args, stream));

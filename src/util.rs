@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{mem, error::Error};
+use std::{mem, error::Error, fmt::Debug};
 
 #[derive(Debug, Clone)]
 pub struct ParseError(String);
@@ -41,6 +41,46 @@ impl<B, I: Iterator<Item=impl Clone>, F, G, C> Iterator for MapFold<I, F, G, C> 
             }
         }
 
+    }
+}
+
+pub trait ConsumeToTuple<T> {
+    fn to_tuple(self: Self) -> T;
+}
+
+impl<T: Debug> ConsumeToTuple<(T,)> for Vec<T> {
+    fn to_tuple(self: Self) -> (T,) {
+        if self.len() == 1 {
+            let mut it = self.into_iter();
+            (it.next().unwrap(),)
+        }
+        else {
+            panic!("Wrong arguments: {:?}", self);
+        }
+    }
+}
+
+impl<T: Debug> ConsumeToTuple<(T, T)> for Vec<T> {
+    fn to_tuple(self: Self) -> (T, T) {
+        if self.len() == 2 {
+            let mut it = self.into_iter();
+            (it.next().unwrap(), it.next().unwrap())
+        }
+        else {
+            panic!("Wrong arguments: {:?}", self);
+        }
+    }
+}
+
+impl<T: Debug> ConsumeToTuple<(T, T, T)> for Vec<T> {
+    fn to_tuple(self: Self) -> (T, T, T) {
+        if self.len() == 3 {
+            let mut it = self.into_iter();
+            (it.next().unwrap(), it.next().unwrap(), it.next().unwrap())
+        }
+        else {
+            panic!("Wrong arguments: {:?}", self);
+        }
     }
 }
 

@@ -19,6 +19,7 @@ impl Default for Namespace {
         helper("columns", builtins::columns);
         helper("write", builtins::write);
         helper("parse", builtins::parse);
+        helper("classify", builtins::classify);
 
         n
     }

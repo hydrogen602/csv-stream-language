@@ -7,10 +7,12 @@ mod eval_chain;
 mod builtins;
 mod namespace;
 mod util;
+mod rule;
 
 use std::fs::read_to_string;
 
-use commands::{Argument, MatchPattern};
+use commands::{Argument, DataTypes};
+use rule::MatchPattern;
 use pest::Parser;
 use pest::error::{Error, ErrorVariant};
 use pest::iterators::{Pairs, Pair};
@@ -25,8 +27,7 @@ struct IdentParser;
 
 fn parse_fail<'i>(e: Error<Rule>) -> Pairs<'i, Rule> {
     eprintln!("{}", e);
-    let x = e.variant;
-    match x {
+    match e.variant {
         ErrorVariant::ParsingError { positives: p, negatives: n } => {
             eprintln!("Positives: {:?}", p);
             eprintln!("Negatives: {:?}", n);
@@ -39,7 +40,23 @@ fn parse_fail<'i>(e: Error<Rule>) -> Pairs<'i, Rule> {
 }
 
 fn match_parser(pair: Pair<Rule>) -> MatchPattern {
-    MatchPattern::String(pair.into_inner().next().unwrap().as_str().into())
+    let s = pair.into_inner().next().unwrap().as_str();
+
+    MatchPattern::compile_regex(s).unwrap()
+}
+
+fn data_val_parser(pair: Pair<Rule>) -> DataTypes {
+    match pair.as_rule() {
+        Rule::string => {
+            //println!("{:?}", pair);
+            DataTypes::String(pair.into_inner().next().unwrap().as_str().into())
+        },
+        Rule::integer => DataTypes::Int(pair.as_str().parse().expect("integer rule wrong")),
+        Rule::float => DataTypes::Float(pair.as_str().parse().expect("float rule wrong")),
+        r => {
+            unreachable!("Got rule {:?}", r);
+        }
+    }
 }
 
 fn arg_parser(pair: Pair<Rule>) -> Argument {
@@ -59,7 +76,7 @@ fn arg_parser(pair: Pair<Rule>) -> Argument {
         Rule::tuple => Argument::Tuple(pair.into_inner().map(arg_parser).collect()),
         Rule::rule => {
             let mut it = pair.into_inner();
-            Argument::Rule(it.next().map(match_parser).unwrap(), Box::new(it.next().map(arg_parser).unwrap()))
+            Argument::Rule(it.next().map(match_parser).unwrap(), it.next().map(data_val_parser).unwrap())
         },
         r => {
             unreachable!("Got rule {:?}", r);

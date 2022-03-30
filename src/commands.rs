@@ -1,20 +1,7 @@
 use core::fmt;
-use std::{str::FromStr, string::ParseError};
 
 use chrono::NaiveDate;
-
-#[derive(Debug)]
-pub enum MatchPattern {
-    String(String)
-}
-
-// impl FromStr for MatchPattern {
-//     type Err = ParseError;
-
-//     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        
-//     }
-// }
+use crate::rule::MatchPattern;
 
 #[derive(Debug)]
 pub enum Argument {
@@ -22,7 +9,7 @@ pub enum Argument {
     Int(i32),
     Float(f64),
     Enum(String),
-    Rule(MatchPattern, Box<Argument>),
+    Rule(MatchPattern, DataTypes),
     Tuple(Vec<Argument>)
 }
 
@@ -120,4 +107,4 @@ from_impl!(NaiveDate, NaiveDate);
 pub type RowType = Vec<DataTypes>;
 pub type GenericIterBox = Box<dyn Iterator<Item=RowType>>;
 
-pub type Command = fn(&Vec<Argument>, GenericIterBox) -> GenericIterBox;
+pub type Command = fn(Vec<Argument>, GenericIterBox) -> GenericIterBox;
