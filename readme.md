@@ -17,7 +17,6 @@ Note: `<arg>` is a required argument, `[arg]` is optional
   - Classify the elements in specified column according to a given set of rules. If more than one rule apply, the first matching rule is used. The produced classification is added as a column to the right of the table (i.e. appended to each row). If no rule matches, it will use 
 
 
-
 # Syntax
 ## Match Rules
 Rules follow the syntax: `<match pattern> => <value>`
