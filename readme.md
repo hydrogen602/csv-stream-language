@@ -21,7 +21,7 @@ Note: `<arg>` is a required argument, `[arg]` is optional
 ## Match Rules
 Rules follow the syntax: `<match pattern> => <value>`
 - Value can be a string, int, or float
-- If nothing matches, a default value is used which is 0 or an empty string.
+- If nothing matches, the default value of the empty string is used.
 
 ### Strings
 - String matching is case-insensitive

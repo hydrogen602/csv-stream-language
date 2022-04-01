@@ -12,7 +12,8 @@ impl MatchPattern {
     pub fn compile_regex(pre_s: &str) -> Result<Self, regex::Error> {
         let s = escape(pre_s);
         // escape turns * into \*
-        let reg = format!(r"^{}$", s.replace(r"\*", r".*?"));
+        let reg = format!(r"^(?i){}$", s.replace(r"\*", r".*?"));
+
         let r = Regex::new(&reg)?;
         Ok(Self::String(r))
     }

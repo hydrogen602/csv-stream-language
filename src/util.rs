@@ -44,43 +44,73 @@ impl<B, I: Iterator<Item=impl Clone>, F, G, C> Iterator for MapFold<I, F, G, C> 
     }
 }
 
-pub trait ConsumeToTuple<T> {
-    fn to_tuple(self: Self) -> T;
-}
-
-impl<T: Debug> ConsumeToTuple<(T,)> for Vec<T> {
-    fn to_tuple(self: Self) -> (T,) {
-        if self.len() == 1 {
-            let mut it = self.into_iter();
-            (it.next().unwrap(),)
-        }
-        else {
-            panic!("Wrong arguments: {:?}", self);
-        }
+pub fn to_1_tuple<T: Debug>(v: Vec<T>) -> (T,) {
+    if v.len() == 1 {
+        let mut it = v.into_iter();
+        (it.next().unwrap(),)
+    }
+    else {
+        panic!("Wrong number of arguments, expected 1: {:?}", v);
     }
 }
 
-impl<T: Debug> ConsumeToTuple<(T, T)> for Vec<T> {
-    fn to_tuple(self: Self) -> (T, T) {
-        if self.len() == 2 {
-            let mut it = self.into_iter();
-            (it.next().unwrap(), it.next().unwrap())
-        }
-        else {
-            panic!("Wrong arguments: {:?}", self);
-        }
+pub fn to_2_tuple<T: Debug>(v: Vec<T>) -> (T,T) {
+    if v.len() == 2 {
+        let mut it = v.into_iter();
+        (it.next().unwrap(), it.next().unwrap())
+    }
+    else {
+        panic!("Wrong number of arguments, expected 2: {:?}", v);
     }
 }
 
-impl<T: Debug> ConsumeToTuple<(T, T, T)> for Vec<T> {
-    fn to_tuple(self: Self) -> (T, T, T) {
-        if self.len() == 3 {
-            let mut it = self.into_iter();
-            (it.next().unwrap(), it.next().unwrap(), it.next().unwrap())
-        }
-        else {
-            panic!("Wrong arguments: {:?}", self);
-        }
+pub fn to_3_tuple<T: Debug>(v: Vec<T>) -> (T,T,T) {
+    if v.len() == 3 {
+        let mut it = v.into_iter();
+        (it.next().unwrap(), it.next().unwrap(), it.next().unwrap())
+    }
+    else {
+        panic!("Wrong number of arguments, expected 3: {:?}", v);
     }
 }
+
+// pub trait ConsumeToTuple<T> {
+//     fn to_tuple(self: Self) -> T;
+// }
+
+// impl<T: Debug> ConsumeToTuple<(T,)> for Vec<T> {
+//     fn to_tuple(self: Self) -> (T,) {
+//         if self.len() == 1 {
+//             let mut it = self.into_iter();
+//             (it.next().unwrap(),)
+//         }
+//         else {
+//             panic!("Wrong arguments: {:?}", self);
+//         }
+//     }
+// }
+
+// impl<T: Debug> ConsumeToTuple<(T, T)> for Vec<T> {
+//     fn to_tuple(self: Self) -> (T, T) {
+//         if self.len() == 2 {
+//             let mut it = self.into_iter();
+//             (it.next().unwrap(), it.next().unwrap())
+//         }
+//         else {
+//             panic!("Wrong arguments: {:?}", self);
+//         }
+//     }
+// }
+
+// impl<T: Debug> ConsumeToTuple<(T, T, T)> for Vec<T> {
+//     fn to_tuple(self: Self) -> (T, T, T) {
+//         if self.len() == 3 {
+//             let mut it = self.into_iter();
+//             (it.next().unwrap(), it.next().unwrap(), it.next().unwrap())
+//         }
+//         else {
+//             panic!("Wrong arguments: {:?}", self);
+//         }
+//     }
+// }
 

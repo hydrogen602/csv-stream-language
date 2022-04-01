@@ -1,4 +1,7 @@
 # read "data.csv" >> drop head 2 >> columns (4, 1) >> print
 #     parse (float, date) >> classify ("food*" => "Groceries") >> print >> write "out.csv"
-read "data.csv" >> drop head 2 >> classify 2 ("food*" => "Groceries") >> print
+read "data.csv" >> drop head 2 >> classify 2 (
+    "food*" => "Groceries", 
+    "*income*" => "Income"
+    ) >> print
 # parse (date, text, money, money) >> 

@@ -1,6 +1,6 @@
 use csv::StringRecord;
 
-use crate::commands::{Argument, GenericIterBox, RowType, DataTypes};
+use crate::{commands::{Argument, GenericIterBox, RowType, DataTypes}, util};
 
 
 /// Useful for repeats, just replacing anything with something
@@ -55,54 +55,54 @@ use crate::commands::{Argument, GenericIterBox, RowType, DataTypes};
 //     // };
 // }
 
-use crate::util::ConsumeToTuple;
-
 
 pub fn read(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
-    if let (Argument::String(file),) = m_args.to_tuple() {
-        let reader = csv::ReaderBuilder::new().has_headers(false).flexible(true).from_path(file).expect("Could not open file for reading");
+    match util::to_1_tuple(m_args) {
+        (Argument::String(file),) => {
+            let reader = csv::ReaderBuilder::new().has_headers(false).flexible(true).from_path(file).expect("Could not open file for reading");
 
-        let x = reader.into_records().map(|x| x.expect("Read failed"));
+            let x = reader.into_records().map(|x| x.expect("Read failed"));
 
-        let it = x.map(|sr: StringRecord| { sr.into_iter().map(|s| s.into()).collect() });
+            let it = x.map(|sr: StringRecord| { sr.into_iter().map(|s| s.into()).collect() });
 
-        Box::new(input.chain(it))
-    }
-    else { 
-        panic!("Wrong arguments: {:?}", m_args);
+            Box::new(input.chain(it))
+        },
+        args => { panic!("Wrong arguments: {:?}", args); }
     }
 }
 
 pub fn write(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
-    if let [Argument::String(file)] = m_args[..] {
-        let mut writer = csv::WriterBuilder::new().flexible(true).from_path(file).expect("Could not open file for writing");
-
-        Box::new(input.map(move |row| {
-            let x = row.iter().map(|x| x.to_string());
-            writer.write_record(x).expect("Write failed");
-
-            row
-        }))
-    }
-    else {
-        panic!("Wrong arguments: {:?}", m_args);
+    match util::to_1_tuple(m_args) {
+        (Argument::String(file),) => {
+            let mut writer = csv::WriterBuilder::new().flexible(true).from_path(file).expect("Could not open file for writing");
+    
+            Box::new(input.map(move |row| {
+                let x = row.iter().map(|x| x.to_string());
+                writer.write_record(x).expect("Write failed");
+    
+                row
+            }))
+        },
+        args => { 
+            panic!("Wrong arguments: {:?}", args);
+        }
     }
 }
 
 pub fn drop(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
-    if let [Argument::Enum(op), Argument::Int(n)] = m_args[..] {
-        match op.as_str() {
-            "head" => {
-                Box::new(input.skip(n as usize)) //input
-            },
-            "tail" => {
-                todo!("tail not yet supported");
-            },
-            arg => panic!("Invalid argument for drop: {}", arg)
-        }
-    }
-    else {
-        panic!("Wrong arguments: {:?}", m_args);
+    match util::to_2_tuple(m_args) {
+        (Argument::Enum(op), Argument::Int(n)) => {
+            match op.as_str() {
+                "head" => {
+                    Box::new(input.skip(n as usize)) //input
+                },
+                "tail" => {
+                    todo!("tail not yet supported");
+                },
+                arg => panic!("Invalid argument for drop: {}", arg)
+            }
+        },
+        args => { panic!("Wrong arguments: {:?}", args); }
     }
 }
 
@@ -128,23 +128,25 @@ impl<I: Iterator<Item=RowType>> Iterator for ColumnShuffle<I> {
 }
 
 pub fn columns(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
-    if let [Argument::Tuple(order_arg)] = m_args[..] {
-        let order: Vec<_> = order_arg.into_iter().map(|e| {
-            if let Argument::Int(n) = e {
-                if n <= 0 { panic!("Index columns start at 1"); }
-                let index = (n - 1) as usize; // n > 0, so n-1 >= 0
+    match util::to_1_tuple(m_args) {
+        (Argument::Tuple(order_arg),) => {
+            let order: Vec<_> = order_arg.into_iter().map(|e| {
+                if let Argument::Int(n) = e {
+                    if n <= 0 { panic!("Index columns start at 1"); }
+                    let index = (n - 1) as usize; // n > 0, so n-1 >= 0
 
-                index
-            }
-            else {
-                panic!("Invalid argument: {:?}", e);
-            }
-        }).collect();
+                    index
+                }
+                else {
+                    panic!("Invalid argument: {:?}", e);
+                }
+            }).collect();
 
-        Box::new( ColumnShuffle::new(input, order) )
-    }
-    else {
-        panic!("Wrong arguments: {:?}", m_args);
+            Box::new( ColumnShuffle::new(input, order) )
+        },
+        args => {
+            panic!("Wrong arguments: {:?}", args);
+        }
     }
 }
 
@@ -171,69 +173,73 @@ pub fn print(args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
 
 pub fn parse(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     // NaiveDate::parse_from_str
-    if let [Argument::Tuple(args)] = m_args[..] {
-        let types: Vec<String> = args.iter().map(|e| {
-            if let Argument::Enum(ident) = e {
-                ident.into()
-            }
-            else {
-                panic!("Invalid arguments: {:?}", args);
-            }
-        }).collect();
-        // let types = vec![1];
-
-        Box::new(input.map(move |row| {
-            //let x = types;
-            if row.len() != types.len() {
-                panic!("Error: Parse arguments don't match columns")
-            }
-
-            row.into_iter().zip(types.iter()).map(|(data, ty)| {
-                match ty.as_str() {
-                    "int" => DataTypes::Int(data.into()),
-                    "float" => DataTypes::Float(data.into()),
-                    "string" => DataTypes::String(data.into()),
-                    "date" => DataTypes::NaiveDate(data.into()),
-                    _ => panic!("unknown type: {}", ty)
+    match util::to_1_tuple(m_args) {
+        (Argument::Tuple(args),) => {
+            let types: Vec<String> = args.iter().map(|e| {
+                if let Argument::Enum(ident) = e {
+                    ident.into()
                 }
-            }).collect()
-        }))
-    }
-    else {
-        panic!("Wrong arguments: {:?}", m_args);
+                else {
+                    panic!("Invalid arguments: {:?}", args);
+                }
+            }).collect();
+            // let types = vec![1];
+
+            Box::new(input.map(move |row| {
+                //let x = types;
+                if row.len() != types.len() {
+                    panic!("Error: Parse arguments don't match columns")
+                }
+
+                row.into_iter().zip(types.iter()).map(|(data, ty)| {
+                    match ty.as_str() {
+                        "int" => DataTypes::Int(data.into()),
+                        "float" => DataTypes::Float(data.into()),
+                        "string" => DataTypes::String(data.into()),
+                        "date" => DataTypes::NaiveDate(data.into()),
+                        _ => panic!("unknown type: {}", ty)
+                    }
+                }).collect()
+            }))
+        },
+        args => {
+            panic!("Wrong arguments: {:?}", args);
+        }
     }
 }
 
 pub fn classify(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
-    if let [Argument::Int(pre_index), Argument::Tuple(args)] = m_args[..] {
-        assert!(pre_index > 0, "index has to be greater than 0");
-        let index = pre_index as usize;
+    match util::to_2_tuple(m_args) {
+        (Argument::Int(pre_index), Argument::Tuple(args)) => {
+            assert!(pre_index > 0, "index has to be greater than 0");
+            let index = (pre_index - 1) as usize;
 
-        let rules: Vec<_> = args.into_iter().map(|e| {
-            if let Argument::Rule(rule, val) = e {
-                (rule, val)
-            }
-            else {
-                panic!("Invalid arguments: expected rule, but got {:?}", e);
-            }
-        }).collect();
+            let rules: Vec<_> = args.into_iter().map(|e| {
+                if let Argument::Rule(rule, val) = e {
+                    (rule, val)
+                }
+                else {
+                    panic!("Invalid arguments: expected rule, but got {:?}", e);
+                }
+            }).collect();
 
 
-        Box::new(input.into_iter().map(move |mut row| {
-            let val = &row[index];
-            let label = rules.iter().find_map(
-                |(r, label)| if r.is_match(val) { Some(label.clone()) } else { None } 
-            ).unwrap_or(DataTypes::String("".to_string()));
-
-            row.push(label);
-            row
-        }))
-    }
-    else {
-        panic!("Wrong arguments: {:?}", m_args);
+            Box::new(input.into_iter().map(move |mut row| {
+                let val = &row[index];
+                
+                let label = rules.iter().find_map(
+                    |(r, label)| if r.is_match(val) { Some(label.clone()) } else { None } 
+                ).unwrap_or(DataTypes::String("".to_string()));
+                
+                row.push(label);
+                row
+            }))
+        },
+        args => {
+            panic!("Wrong arguments: {:?}", args);
+        }
     }
 }
-
 pub mod summary {
     // use super::*;
     // pub fn sum(args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
