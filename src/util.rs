@@ -64,6 +64,7 @@ pub fn to_2_tuple<T: Debug>(v: Vec<T>) -> (T,T) {
     }
 }
 
+#[allow(dead_code)]
 pub fn to_3_tuple<T: Debug>(v: Vec<T>) -> (T,T,T) {
     if v.len() == 3 {
         let mut it = v.into_iter();

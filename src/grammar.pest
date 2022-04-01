@@ -24,7 +24,9 @@ char = _{
     | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
 }
 
-rule = { string ~ "=>" ~ data_types }
+pattern = { string }
+
+rule = { pattern ~ "=>" ~ data_types }
 
 data_types = _{ string | float | integer } // date is technically a data type
 

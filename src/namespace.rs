@@ -20,6 +20,7 @@ impl Default for Namespace {
         helper("write", builtins::write);
         helper("parse", builtins::parse);
         helper("classify", builtins::classify);
+        helper("filter", builtins::filter);
 
         n
     }
@@ -42,6 +43,7 @@ impl Namespace {
         self.commands.get(s)
     }
 
+    #[allow(dead_code)]
     pub fn add_command(&mut self, s: &str, cmd: Command) -> Result<(), CommandExistsError> {
         if self.commands.contains_key(s) {
             Err(CommandExistsError)

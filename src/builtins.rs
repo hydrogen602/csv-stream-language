@@ -1,6 +1,6 @@
 use csv::StringRecord;
 
-use crate::{commands::{Argument, GenericIterBox, RowType, DataTypes}, util};
+use crate::{commands::{Argument, GenericIterBox, RowType, DataTypes}, util, rule::MatchPattern};
 
 
 /// Useful for repeats, just replacing anything with something
@@ -91,16 +91,11 @@ pub fn write(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
 
 pub fn drop(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     match util::to_2_tuple(m_args) {
-        (Argument::Enum(op), Argument::Int(n)) => {
-            match op.as_str() {
-                "head" => {
-                    Box::new(input.skip(n as usize)) //input
-                },
-                "tail" => {
-                    todo!("tail not yet supported");
-                },
-                arg => panic!("Invalid argument for drop: {}", arg)
-            }
+        (Argument::Enum(op), Argument::Int(n)) if op == "head" => {
+            Box::new(input.skip(n as usize)) //input
+        },
+        (Argument::Enum(op), Argument::Int(_)) if op == "tail" => {
+            todo!("tail not yet supported");
         },
         args => { panic!("Wrong arguments: {:?}", args); }
     }
@@ -208,6 +203,29 @@ pub fn parse(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     }
 }
 
+pub fn filter(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
+   let (pre_index, pattern) = match util::to_2_tuple(m_args) {
+        (Argument::Int(pre_index), Argument::Pattern(pattern)) => {
+            (pre_index, pattern)
+        },
+        (Argument::Int(pre_index), Argument::String(ref pattern)) => {
+            // there is no syntactic difference between a pattern and a string
+            (pre_index, MatchPattern::compile_regex(pattern).unwrap())
+        }
+        args => {
+            panic!("Wrong arguments: {:?}", args);
+        }
+    };
+
+    assert!(pre_index > 0, "index has to be greater than 0");
+    let index = (pre_index - 1) as usize;
+
+    Box::new(input.filter(move |row| {
+        let elem = &row[index];
+        pattern.is_match(elem)
+    }))
+}
+
 pub fn classify(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     match util::to_2_tuple(m_args) {
         (Argument::Int(pre_index), Argument::Tuple(args)) => {
@@ -224,12 +242,14 @@ pub fn classify(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox 
             }).collect();
 
 
-            Box::new(input.into_iter().map(move |mut row| {
+            Box::new(input.map(move |mut row| {
                 let val = &row[index];
                 
                 let label = rules.iter().find_map(
                     |(r, label)| if r.is_match(val) { Some(label.clone()) } else { None } 
                 ).unwrap_or(DataTypes::String("".to_string()));
+
+                //println!("{:?} {:?}", label, rules);
                 
                 row.push(label);
                 row

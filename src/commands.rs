@@ -10,6 +10,7 @@ pub enum Argument {
     Float(f64),
     Enum(String),
     Rule(MatchPattern, DataTypes),
+    Pattern(MatchPattern),
     Tuple(Vec<Argument>)
 }
 

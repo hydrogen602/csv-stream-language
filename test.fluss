@@ -3,5 +3,6 @@
 read "data.csv" >> drop head 2 >> classify 2 (
     "food*" => "Groceries", 
     "*income*" => "Income"
-    ) >> print
+    ) >> filter 5 "Groceries" >> print
+# >> filter 4 "Groceries"
 # parse (date, text, money, money) >> 

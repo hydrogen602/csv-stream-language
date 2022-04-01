@@ -14,7 +14,9 @@ Note: `<arg>` is a required argument, `[arg]` is optional
 - `parse <types: tuple[ident]>`
   - Parse strings to data types like integers, decimal numbers, or dates. Valid elements of `config` are: `int` for integers, `float` for decimal numbers, and `date` for dates.
 - `classify <column: int> <rules: tuple[rule]>`
-  - Classify the elements in specified column according to a given set of rules. If more than one rule apply, the first matching rule is used. The produced classification is added as a column to the right of the table (i.e. appended to each row). If no rule matches, it will use 
+  - Classify the elements in specified column according to a given set of rules. If more than one rule apply, the first matching rule is used. The produced classification is added as a column to the right of the table (i.e. appended to each row). If no rule matches, it will use
+- `filter <column: int> <match pattern>`
+  - Only keeps rows where the element in the specified column matches the pattern
 
 
 # Syntax

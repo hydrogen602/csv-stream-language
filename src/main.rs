@@ -40,9 +40,18 @@ fn parse_fail<'i>(e: Error<Rule>) -> Pairs<'i, Rule> {
 }
 
 fn match_parser(pair: Pair<Rule>) -> MatchPattern {
-    let s = pair.into_inner().next().unwrap().as_str();
+    assert_eq!(Rule::pattern, pair.as_rule());
 
-    MatchPattern::compile_regex(s).unwrap()
+    let actual_rule = pair.into_inner().next().unwrap();
+    match actual_rule.as_rule() {
+        Rule::string => {
+            let s = actual_rule.into_inner().next().unwrap().as_str();
+            MatchPattern::compile_regex(s).unwrap()
+        },
+        r => {
+            panic!("Invalid rule: {:?}", r);
+        }
+    }
 }
 
 fn data_val_parser(pair: Pair<Rule>) -> DataTypes {
@@ -74,6 +83,7 @@ fn arg_parser(pair: Pair<Rule>) -> Argument {
         Rule::float => Argument::Float(content.parse().expect("float rule wrong")),
         Rule::ident => Argument::Enum(content.into()),
         Rule::tuple => Argument::Tuple(pair.into_inner().map(arg_parser).collect()),
+        Rule::pattern => Argument::Pattern(pair.into_inner().next().map(match_parser).unwrap()),
         Rule::rule => {
             let mut it = pair.into_inner();
             Argument::Rule(it.next().map(match_parser).unwrap(), it.next().map(data_val_parser).unwrap())
