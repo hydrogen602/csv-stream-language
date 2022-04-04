@@ -1,4 +1,9 @@
+
+# Rust
 target
 Cargo.lock
+
+# Config & Testing
 .vscode
 out.csv
+Makefile

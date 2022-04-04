@@ -1,4 +1,5 @@
 use core::fmt;
+use std::{ops::Add, str::FromStr};
 
 use chrono::NaiveDate;
 use crate::rule::MatchPattern;
@@ -25,15 +26,46 @@ pub enum Argument {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum DataTypes {
+    Empty,
     String(String),
     Int(i32),
     Float(f64),
     NaiveDate(NaiveDate)
 }
 
+impl Default for DataTypes {
+    fn default() -> Self {
+        DataTypes::Empty
+    }
+}
+
+impl FromStr for DataTypes {
+    type Err = (); // should never error
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // most restrictive to least
+        // TODO: dates
+
+        if s.is_empty() {
+            Ok(DataTypes::Empty)
+        }
+        else if let Ok(n) = s.parse::<i32>() {
+            Ok(DataTypes::Int(n))
+        }
+        else if let Ok(f) = s.parse::<f64>() {
+            Ok(DataTypes::Float(f))
+        }
+        else {
+            Ok(DataTypes::String(s.into()))
+        }
+
+    }
+}
+
 impl From<DataTypes> for String {
     fn from(d: DataTypes) -> Self {
         match d {
+            DataTypes::Empty => "".to_string(),
             DataTypes::String(s) => s,
             DataTypes::Int(i) => i.to_string(),
             DataTypes::Float(f) => f.to_string(),
@@ -45,6 +77,7 @@ impl From<DataTypes> for String {
 impl From<DataTypes> for i32 {
     fn from(d: DataTypes) -> Self {
         match d {
+            DataTypes::Empty => 0,
             DataTypes::String(s) => s.parse().expect(&format!("could not parse {} as int", s)),
             DataTypes::Int(i) => i,
             DataTypes::Float(f) => f as i32,
@@ -56,6 +89,7 @@ impl From<DataTypes> for i32 {
 impl From<DataTypes> for f64 {
     fn from(d: DataTypes) -> Self {
         match d {
+            DataTypes::Empty => 0.,
             DataTypes::String(s) => s.parse().expect(&format!("could not parse {} as float", s)),
             DataTypes::Int(i) => i as f64,
             DataTypes::Float(f) => f,
@@ -80,6 +114,7 @@ impl From<DataTypes> for NaiveDate {
 impl fmt::Display for DataTypes {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            DataTypes::Empty => "".fmt(f),
             DataTypes::String(s) => s.fmt(f),
             DataTypes::Int(i) => i.fmt(f),
             DataTypes::Float(float) => float.fmt(f),
@@ -98,12 +133,53 @@ macro_rules! from_impl {
     };
 }
 
+// handled by FromStr
+// impl From<String> for DataTypes {
+//     fn from(s: String) -> Self {
+//         if s.is_empty() {
+//             Self::Empty
+//         }
+//         else {
+//             Self::String(s.into())
+//         }
+//     }
+// }
+
 from_impl!(String, String);
 from_impl!(String, &str);
 from_impl!(Int, i32);
 from_impl!(Float, f64);
 from_impl!(NaiveDate, NaiveDate);
 
+impl Add for DataTypes {
+    type Output = DataTypes;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        use DataTypes::*;
+
+        match (self, rhs) {
+            (Empty, Empty) => Empty,
+            (Empty, rhs) => rhs,
+            (lhs, Empty) => lhs,
+            (String(mut s), rhs) => {
+                let r: std::string::String = rhs.into();
+                s.push_str(&r);
+                String(s)
+            },
+            (lhs, String(s)) => {
+                let mut l: std::string::String = lhs.into();
+                l.push_str(&s);
+                String(l)
+            },
+            (Float(f), Int(rn)) => Float(f + rn as f64),
+            (Float(f), Float(rn)) => Float(f + rn as f64),
+            (Int(ln), Float(rn)) => Float(ln as f64 + rn),
+            (Int(ln), Int(rn)) => Int(ln + rn),
+            (NaiveDate(_), _) => panic!("Cannot sum dates"),
+            (_, NaiveDate(_)) => panic!("Cannot sum dates")
+        }
+    }
+}
 
 pub type RowType = Vec<DataTypes>;
 pub type GenericIterBox = Box<dyn Iterator<Item=RowType>>;

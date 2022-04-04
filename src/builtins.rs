@@ -63,7 +63,7 @@ pub fn read(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
 
             let x = reader.into_records().map(|x| x.expect("Read failed"));
 
-            let it = x.map(|sr: StringRecord| { sr.into_iter().map(|s| s.into()).collect() });
+            let it = x.map(|sr: StringRecord| { sr.into_iter().map(|s| s.parse().unwrap()).collect() });
 
             Box::new(input.chain(it))
         },
@@ -261,10 +261,51 @@ pub fn classify(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox 
     }
 }
 pub mod summary {
-    // use super::*;
-    // pub fn sum(args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
-    //     //input.ma
-    // }
+    use std::mem::take;
+
+    use super::*;
+
+    pub struct LazyEval<F> {
+        func: Option<F>
+    }
+    
+    impl<F> LazyEval<F> {
+        pub fn new(func: F) -> Self {
+            Self { func: Some(func) }
+        }
+    }
+
+    impl<F, R> Iterator for LazyEval<F> where F: FnOnce() -> R {
+        type Item = R;
+    
+        fn next(&mut self) -> Option<Self::Item> {
+            take(&mut self.func).map(|f| f())
+        }
+    }
+
+    pub fn sum(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
+        let pre_index = match util::to_1_tuple(m_args) {
+            (Argument::Int(pre_index),) => {
+                pre_index
+            },
+            args => {
+                panic!("Wrong arguments: {:?}", args);
+            }
+        };
+
+        assert!(pre_index > 0, "index has to be greater than 0");
+        let index = (pre_index - 1) as usize;
+        
+        Box::new(LazyEval::new(move || {
+            let elem = input.fold(DataTypes::Int(0), |d, mut row| {
+                let e = take(&mut row[index]);
+
+                d + e
+            });
+
+            vec![elem]
+        }))
+     }
 }
 
 pub mod higher_order {
@@ -272,4 +313,5 @@ pub mod higher_order {
     // pub fn map(args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
 
 }
+
 

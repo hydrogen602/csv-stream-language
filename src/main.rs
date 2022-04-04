@@ -9,6 +9,7 @@ mod namespace;
 mod util;
 mod rule;
 
+use std::env;
 use std::fs::read_to_string;
 
 use commands::{Argument, DataTypes};
@@ -95,9 +96,25 @@ fn arg_parser(pair: Pair<Rule>) -> Argument {
 }
 
 fn main() {
-    let s = read_to_string("test.fluss").expect("yeet");
+    let args: Vec<String> = env::args().collect();
 
-    let mut pairs = IdentParser::parse(Rule::file, &s).unwrap_or_else(parse_fail);
+    let b_args: Vec<&str> = args.iter().map(String::as_str).collect();
+
+    match b_args[..] {
+        [_, file] => {
+            let s = read_to_string(file).expect(&format!("Could not read file: {}", file));
+
+            parse_str(&s);
+        },
+        [exec, ..] => { 
+            eprintln!("Usage: {exec} file") 
+        },
+        [] => { unreachable!(); }
+    }
+}
+
+fn parse_str(s: &str) {
+    let mut pairs = IdentParser::parse(Rule::file, s).unwrap_or_else(parse_fail);
 
     let flow = pairs.next().unwrap();
     // println!("{:?}", flow);

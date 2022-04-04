@@ -22,6 +22,9 @@ impl Default for Namespace {
         helper("classify", builtins::classify);
         helper("filter", builtins::filter);
 
+        // summary funcs
+        helper("sum", builtins::summary::sum);
+
         n
     }
 }

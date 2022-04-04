@@ -4,7 +4,7 @@
 Note: `<arg>` is a required argument, `[arg]` is optional
 
 - `read <filename: str>`
-  - Read a file and create a stream of data
+  - Read a file and create a stream of data. It will attempt to parse each value if possible.
 - `drop head <count: int>`
   - Drop `count` rows from the beginning (aka top of table)
 - `print [header: str]`
@@ -17,7 +17,8 @@ Note: `<arg>` is a required argument, `[arg]` is optional
   - Classify the elements in specified column according to a given set of rules. If more than one rule apply, the first matching rule is used. The produced classification is added as a column to the right of the table (i.e. appended to each row). If no rule matches, it will use
 - `filter <column: int> <match pattern>`
   - Only keeps rows where the element in the specified column matches the pattern
-
+- `sum <column: int>`
+  - Sum all the entries in the given columns. Strings will be appended, and if strings are numbers are encountered, the numbers will be turned into strings.
 
 # Syntax
 ## Match Rules
