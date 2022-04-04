@@ -1,6 +1,8 @@
 use core::fmt;
 use std::{mem, error::Error, fmt::Debug};
 
+use either::Either;
+
 #[derive(Debug, Clone)]
 pub struct ParseError(String);
 
@@ -44,6 +46,36 @@ impl<B, I: Iterator<Item=impl Clone>, F, G, C> Iterator for MapFold<I, F, G, C> 
     }
 }
 
+pub fn get_args<const C: usize, T: Debug>(v: Vec<T>) -> [T; C] {
+    if v.len() != C {
+        panic!("Wrong number of arguments, expected {}: {:?}", C, v);
+    }
+
+    let mut it = v.into_iter();
+
+    [0u8; C].map(|_| {
+        it.next().unwrap()
+    })
+}
+
+pub fn get_args_2_sizes<const C1: usize, const C2: usize, T: Debug>(v: Vec<T>) -> Either<[T; C1], [T; C2]> {
+    if v.len() == C1 {
+        let mut it = v.into_iter();
+        Either::Left([0u8; C1].map(|_| {
+            it.next().unwrap()
+        }))
+    }
+    else if v.len() == C2 {
+        let mut it = v.into_iter();
+        Either::Right([0u8; C2].map(|_| {
+            it.next().unwrap()
+        }))
+    }
+    else {
+        panic!("Wrong number of arguments, expected {} or {}: {:?}", C1, C2, v)
+    }
+}
+ 
 pub fn to_1_tuple<T: Debug>(v: Vec<T>) -> (T,) {
     if v.len() == 1 {
         let mut it = v.into_iter();

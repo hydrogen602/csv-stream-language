@@ -1,4 +1,5 @@
 use csv::StringRecord;
+use either::Either;
 
 use crate::{commands::{Argument, GenericIterBox, RowType, DataTypes}, util, rule::MatchPattern};
 
@@ -57,16 +58,26 @@ use crate::{commands::{Argument, GenericIterBox, RowType, DataTypes}, util, rule
 
 
 pub fn read(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
-    match util::to_1_tuple(m_args) {
-        (Argument::String(file),) => {
-            let reader = csv::ReaderBuilder::new().has_headers(false).flexible(true).from_path(file).expect("Could not open file for reading");
+    fn read_file(file: &str) -> impl Iterator<Item=StringRecord> {
+        let reader = csv::ReaderBuilder::new().has_headers(false).flexible(true).from_path(file).expect("Could not open file for reading");
 
-            let x = reader.into_records().map(|x| x.expect("Read failed"));
+        let x = reader.into_records().map(|x| x.expect("Read failed"));
+        x
+    }
 
-            let it = x.map(|sr: StringRecord| { sr.into_iter().map(|s| s.parse().unwrap()).collect() });
+    match util::get_args_2_sizes(m_args) {
+        Either::Left([Argument::String(file)]) => {
+            // auto parse
+            let it = read_file(&file).map(|sr: StringRecord| { sr.into_iter().map(|s| s.parse().unwrap()).collect() });
 
             Box::new(input.chain(it))
         },
+        Either::Right([Argument::String(file), tup@Argument::Tuple(_)]) => {
+            // custom parse
+            let it = read_file(&file).map(|sr: StringRecord| { sr.into_iter().map(|s| DataTypes::String(s.to_string())).collect() });
+
+            Box::new(parse(vec![tup], Box::new(input.chain(it))))
+        }
         args => { panic!("Wrong arguments: {:?}", args); }
     }
 }
@@ -90,11 +101,11 @@ pub fn write(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
 }
 
 pub fn drop(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
-    match util::to_2_tuple(m_args) {
-        (Argument::Enum(op), Argument::Int(n)) if op == "head" => {
+    match util::get_args(m_args) {
+        [Argument::Enum(op), Argument::Int(n)] if op == "head" => {
             Box::new(input.skip(n as usize)) //input
         },
-        (Argument::Enum(op), Argument::Int(_)) if op == "tail" => {
+        [Argument::Enum(op), Argument::Int(_)] if op == "tail" => {
             todo!("tail not yet supported");
         },
         args => { panic!("Wrong arguments: {:?}", args); }
