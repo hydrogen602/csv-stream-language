@@ -4,7 +4,9 @@
 Note: `<arg>` is a required argument, `[arg]` is optional
 
 - `read <filename: str>`
-  - Read a file and create a stream of data. It will attempt to parse each value if possible.
+  - Read a csv file and create a stream of data. It will attempt to parse each value if possible.
+- `write <filename: str>`
+  - Write the stream of data to file as csv
 - `drop head <count: int>`
   - Drop `count` rows from the beginning (aka top of table)
 - `print [header: str]`
@@ -19,6 +21,24 @@ Note: `<arg>` is a required argument, `[arg]` is optional
   - Only keeps rows where the element in the specified column matches the pattern
 - `sum <column: int>`
   - Sum all the entries in the given columns. Strings will be appended, and if strings are numbers are encountered, the numbers will be turned into strings.
+
+
+# Command Line Arguments
+
+Command line arguments can be used anywhere where an argument is required. Simply put $n, where n
+is the nth command line argument. The 0th argument is always the name of the script.
+
+For example:
+If `test.fluss` is 
+```
+read $1 >> drop head 2 >> print >> sum 3 >> print
+```
+then
+```
+cargo run -- test.fluss '"data.csv"'
+```
+will substitute the `$1` with `"data.csv"`.
+Note: Command line arguments are parsed as arguments just like arguments in the script file. Bash removes the outer quotes and so `'"data.csv"'` means that the script parses `"data.csv"`, which it recognizes as a string. Without the extra quotes, it would try to interpret it as an command option like `head` instead of an arbitrary string.
 
 # Syntax
 ## Match Rules

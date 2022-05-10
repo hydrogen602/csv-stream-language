@@ -1,8 +1,10 @@
 use core::fmt;
 use std::{ops::Add, str::FromStr};
 
+use crate::{
+    arg_parser, pest::Parser, rule::MatchPattern, Error, ErrorVariant, IdentParser, Pairs, Rule,
+};
 use chrono::NaiveDate;
-use crate::rule::MatchPattern;
 
 #[derive(Debug)]
 pub enum Argument {
@@ -12,17 +14,35 @@ pub enum Argument {
     Enum(String),
     Rule(MatchPattern, DataTypes),
     Pattern(MatchPattern),
-    Tuple(Vec<Argument>)
+    Tuple(Vec<Argument>),
+    CmdLineArg(u32), // u32 is command line arg number, like 1 for $1
 }
 
+impl Argument {
+    pub fn substitute_cmd_line_arg(self: Self, cmd_line_args: &[&str]) -> Self {
+        match self {
+            Self::CmdLineArg(num) => {
+                if num >= cmd_line_args.len() as u32 {
+                    panic!(
+                        "Invalid command line argument: Expected ${num}, but only {} are supplied",
+                        cmd_line_args.len()
+                    );
+                }
 
-// impl TryFrom<Argument> for DataTypes {
-//     type Error = ;
+                let value = &cmd_line_args[num as usize];
 
-//     fn try_from(value: Argument) -> Result<Self, Self::Error> {
-        
-//     }
-// }
+                let parse_fail = |e: Error<Rule>| -> Pairs<Rule> {
+                    eprintln!("{}", e);
+                    panic!("Cannot parse command line argument: {}", value);
+                };
+
+                let mut pairs = IdentParser::parse(Rule::expr, value).unwrap_or_else(parse_fail);
+                arg_parser(pairs.next().unwrap())
+            }
+            other => other,
+        }
+    }
+}
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum DataTypes {
@@ -30,7 +50,7 @@ pub enum DataTypes {
     String(String),
     Int(i32),
     Float(f64),
-    NaiveDate(NaiveDate)
+    NaiveDate(NaiveDate),
 }
 
 impl Default for DataTypes {
@@ -48,17 +68,13 @@ impl FromStr for DataTypes {
 
         if s.is_empty() {
             Ok(DataTypes::Empty)
-        }
-        else if let Ok(n) = s.parse::<i32>() {
+        } else if let Ok(n) = s.parse::<i32>() {
             Ok(DataTypes::Int(n))
-        }
-        else if let Ok(f) = s.parse::<f64>() {
+        } else if let Ok(f) = s.parse::<f64>() {
             Ok(DataTypes::Float(f))
-        }
-        else {
+        } else {
             Ok(DataTypes::String(s.into()))
         }
-
     }
 }
 
@@ -69,7 +85,7 @@ impl From<DataTypes> for String {
             DataTypes::String(s) => s,
             DataTypes::Int(i) => i.to_string(),
             DataTypes::Float(f) => f.to_string(),
-            DataTypes::NaiveDate(date) => date.to_string()
+            DataTypes::NaiveDate(date) => date.to_string(),
         }
     }
 }
@@ -81,7 +97,7 @@ impl From<DataTypes> for i32 {
             DataTypes::String(s) => s.parse().expect(&format!("could not parse {} as int", s)),
             DataTypes::Int(i) => i,
             DataTypes::Float(f) => f as i32,
-            DataTypes::NaiveDate(_) => panic!("could not parse date as int")
+            DataTypes::NaiveDate(_) => panic!("could not parse date as int"),
         }
     }
 }
@@ -93,7 +109,7 @@ impl From<DataTypes> for f64 {
             DataTypes::String(s) => s.parse().expect(&format!("could not parse {} as float", s)),
             DataTypes::Int(i) => i as f64,
             DataTypes::Float(f) => f,
-            DataTypes::NaiveDate(_) => panic!("could not parse date as float")
+            DataTypes::NaiveDate(_) => panic!("could not parse date as float"),
         }
     }
 }
@@ -102,11 +118,10 @@ impl From<DataTypes> for NaiveDate {
     fn from(d: DataTypes) -> Self {
         match d {
             // TODO: get rid of panics
-            DataTypes::String(s) => 
-                NaiveDate::parse_from_str(&s, "%Y-%m-%d").expect(
-                    &format!("Could not parse {} as date", s)),
+            DataTypes::String(s) => NaiveDate::parse_from_str(&s, "%Y-%m-%d")
+                .expect(&format!("Could not parse {} as date", s)),
             DataTypes::NaiveDate(d) => d,
-            _ => panic!()
+            _ => panic!(),
         }
     }
 }
@@ -118,7 +133,7 @@ impl fmt::Display for DataTypes {
             DataTypes::String(s) => s.fmt(f),
             DataTypes::Int(i) => i.fmt(f),
             DataTypes::Float(float) => float.fmt(f),
-            DataTypes::NaiveDate(date) => date.fmt(f)
+            DataTypes::NaiveDate(date) => date.fmt(f),
         }
     }
 }
@@ -165,23 +180,23 @@ impl Add for DataTypes {
                 let r: std::string::String = rhs.into();
                 s.push_str(&r);
                 String(s)
-            },
+            }
             (lhs, String(s)) => {
                 let mut l: std::string::String = lhs.into();
                 l.push_str(&s);
                 String(l)
-            },
+            }
             (Float(f), Int(rn)) => Float(f + rn as f64),
             (Float(f), Float(rn)) => Float(f + rn as f64),
             (Int(ln), Float(rn)) => Float(ln as f64 + rn),
             (Int(ln), Int(rn)) => Int(ln + rn),
             (NaiveDate(_), _) => panic!("Cannot sum dates"),
-            (_, NaiveDate(_)) => panic!("Cannot sum dates")
+            (_, NaiveDate(_)) => panic!("Cannot sum dates"),
         }
     }
 }
 
 pub type RowType = Vec<DataTypes>;
-pub type GenericIterBox = Box<dyn Iterator<Item=RowType>>;
+pub type GenericIterBox = Box<dyn Iterator<Item = RowType>>;
 
 pub type Command = fn(Vec<Argument>, GenericIterBox) -> GenericIterBox;

@@ -6,5 +6,6 @@
 #    ) >> filter 5 "Groceries" >> print
 # >> filter 4 "Groceries"
 # parse (date, text, money, money) >> 
+# "data.csv"
 
-read "data.csv" >> drop head 2 >> print >> sum 3 >> print
+read $1 >> drop head 2 >> print >> sum 3 >> print

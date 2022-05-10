@@ -16,6 +16,8 @@ integer = @{ ("-")? ~ digit+ }
 
 float = @{ ("-")? ~ ( digit+ ~ "." ~ digit* | "." ~ digit+ ) }
 
+varg = ${ "$" ~ digit+ }
+
 string = ${ "\"" ~ inner ~ "\"" }
 inner = @{ char* }
 char = _{
@@ -32,7 +34,7 @@ data_types = _{ string | float | integer } // date is technically a data type
 
 tuple = { "(" ~ nl ~ expr? ~ ("," ~ nl ~ expr)* ~ nl ~ ")" }
 
-expr = _{ tuple | rule | integer | string | float | ident }
+expr = _{ tuple | rule | integer | string | float | ident | varg }
 
 // Main structure
 
