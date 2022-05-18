@@ -56,3 +56,5 @@ Rules follow the syntax: `<match pattern> => <value>`
   - Matches strings ending with `"foo"`
 - `"*foo*" => "This is foo"`
   - Matches strings containing `"foo"`
+
+
