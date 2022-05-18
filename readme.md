@@ -1,4 +1,3 @@
-
 # Commands
 
 Note: `<arg>` is a required argument, `[arg]` is optional
