@@ -1,20 +1,6 @@
-extern crate pest;
-#[macro_use]
-extern crate pest_derive;
+use std::{env, fs::read_to_string};
 
-mod builtins;
-mod commands;
-mod eval_chain;
-mod namespace;
-mod parse;
-mod rule;
-mod util;
-
-use std::env;
-use std::fs::read_to_string;
-
-use namespace::BuiltinNamespace;
-use parse::parse_str;
+use csv_stream_language::{namespace::BuiltinNamespace, parse::parse_str};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
