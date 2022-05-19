@@ -1,15 +1,20 @@
+/// Definition of Namespace, i.e. the mapping of strings to functions (Commands)
 use core::fmt;
 use std::{collections::HashMap, error::Error};
 
 use crate::{builtins, commands::Command};
 
-pub struct Namespace {
+pub trait NameSpace {
+    fn get_command(&self, s: &str) -> Option<Command>;
+}
+
+pub struct BuiltinNamespace {
     commands: HashMap<String, Command>,
 }
 
-impl Default for Namespace {
+impl Default for BuiltinNamespace {
     fn default() -> Self {
-        let mut n = Namespace {
+        let mut n = BuiltinNamespace {
             commands: HashMap::new(),
         };
         let mut helper = |s: &str, f| n.commands.insert(s.into(), f);
@@ -42,17 +47,19 @@ impl fmt::Display for CommandExistsError {
 
 impl Error for CommandExistsError {}
 
-impl Namespace {
-    pub fn get_command(&self, s: &str) -> Option<&Command> {
-        self.commands.get(s)
+impl NameSpace for BuiltinNamespace {
+    fn get_command(&self, s: &str) -> Option<Command> {
+        self.commands.get(s).map(|e| *e)
     }
+}
 
+impl BuiltinNamespace {
     #[allow(dead_code)]
-    pub fn add_command(&mut self, s: &str, cmd: Command) -> Result<(), CommandExistsError> {
-        if self.commands.contains_key(s) {
+    pub fn add_command(&mut self, name: &str, cmd: Command) -> Result<(), CommandExistsError> {
+        if self.commands.contains_key(name) {
             Err(CommandExistsError)
         } else {
-            self.commands.insert(s.into(), cmd);
+            self.commands.insert(name.into(), cmd);
             Ok(())
         }
     }

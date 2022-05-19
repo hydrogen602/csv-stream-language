@@ -1,6 +1,7 @@
+/// Parsing
 use crate::eval_chain::Chain;
-use crate::namespace::Namespace;
-use crate::pest::Parser;
+use crate::namespace::{BuiltinNamespace, NameSpace};
+pub use crate::pest::Parser;
 use pest::error::{Error, ErrorVariant};
 use pest::iterators::{Pair, Pairs};
 
@@ -94,20 +95,23 @@ pub fn arg_parser(pair: Pair<Rule>) -> Argument {
 
 /// Parse the input string and execute it
 /// Command line arguments that can be used in the program are given
-pub fn parse_str_and_execute(s: &str, cmd_line_args: &[&str]) {
+pub fn parse_str(s: &str, cmd_line_args: &[&str], namespace: Option<impl NameSpace>) -> Chain {
     let mut pairs = IdentParser::parse(Rule::file, s).unwrap_or_else(parse_fail);
 
     let flow = pairs.next().unwrap();
     // println!("{:?}", flow);
 
-    let cmds = Namespace::default();
+    let cmds: Box<dyn NameSpace> = match namespace {
+        Some(n) => Box::new(n),
+        None => Box::new(BuiltinNamespace::default()),
+    };
 
     let mut chain = Chain::default();
 
     for command in flow.into_inner() {
         let mut parts = command.into_inner();
         let func_name = parts.next().unwrap();
-        let mut args: Vec<_> = parts.map(arg_parser).collect();
+        let args: Vec<_> = parts.map(arg_parser).collect();
 
         let args = args
             .into_iter()
@@ -115,8 +119,6 @@ pub fn parse_str_and_execute(s: &str, cmd_line_args: &[&str]) {
             .collect();
 
         let f_name = func_name.as_str();
-
-        //println!("{:?} {:?}", f_name, args);
 
         let cmd = cmds
             .get_command(f_name)
@@ -127,5 +129,6 @@ pub fn parse_str_and_execute(s: &str, cmd_line_args: &[&str]) {
 
     //println!("Parse done");
 
-    chain.execute();
+    //chain.execute();
+    return chain;
 }

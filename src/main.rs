@@ -13,9 +13,8 @@ mod util;
 use std::env;
 use std::fs::read_to_string;
 
-use parse::parse_str_and_execute;
-use pest::error::Error;
-use pest::iterators::Pairs;
+use namespace::BuiltinNamespace;
+use parse::parse_str;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -31,9 +30,12 @@ fn main() {
         }
         [_, ref cmd_line_args @ ..] => {
             let file = cmd_line_args[0];
-            let s = read_to_string(file).expect(&format!("Could not read file: {}", file));
+            let file_content =
+                read_to_string(file).expect(&format!("Could not read file: {}", file));
 
-            parse_str_and_execute(&s, cmd_line_args);
+            let chain = parse_str(&file_content, cmd_line_args, None::<BuiltinNamespace>);
+
+            chain.execute();
         }
     }
 }
