@@ -1,16 +1,17 @@
 use core::fmt;
 use std::{collections::HashMap, error::Error};
 
-use crate::{commands::Command, builtins};
-
+use crate::{builtins, commands::Command};
 
 pub struct Namespace {
-    commands: HashMap<String, Command>
+    commands: HashMap<String, Command>,
 }
 
 impl Default for Namespace {
     fn default() -> Self {
-        let mut n = Namespace { commands: HashMap::new() };
+        let mut n = Namespace {
+            commands: HashMap::new(),
+        };
         let mut helper = |s: &str, f| n.commands.insert(s.into(), f);
 
         helper("read", builtins::read);
@@ -21,6 +22,7 @@ impl Default for Namespace {
         helper("parse", builtins::parse);
         helper("classify", builtins::classify);
         helper("filter", builtins::filter);
+        helper("range", builtins::range);
 
         // summary funcs
         helper("sum", builtins::summary::sum);
@@ -28,7 +30,6 @@ impl Default for Namespace {
         n
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub struct CommandExistsError;
@@ -50,8 +51,7 @@ impl Namespace {
     pub fn add_command(&mut self, s: &str, cmd: Command) -> Result<(), CommandExistsError> {
         if self.commands.contains_key(s) {
             Err(CommandExistsError)
-        }
-        else {
+        } else {
             self.commands.insert(s.into(), cmd);
             Ok(())
         }

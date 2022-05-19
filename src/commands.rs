@@ -1,9 +1,7 @@
 use core::fmt;
 use std::{ops::Add, str::FromStr};
 
-use crate::{
-    arg_parser, pest::Parser, rule::MatchPattern, Error, ErrorVariant, IdentParser, Pairs, Rule,
-};
+use crate::{arg_parser, pest::Parser, rule::MatchPattern, Error, IdentParser, Pairs, Rule};
 use chrono::NaiveDate;
 
 #[derive(Debug)]

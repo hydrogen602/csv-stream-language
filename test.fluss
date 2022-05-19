@@ -8,4 +8,5 @@
 # parse (date, text, money, money) >> 
 # "data.csv"
 
-read $1 >> drop head 2 >> print >> sum 3 >> print
+# read $1 >> drop head 2 >> print >> sum 3 >> print
+range 20 >> print >> sum 1 >> print
