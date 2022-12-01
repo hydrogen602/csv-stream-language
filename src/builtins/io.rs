@@ -1,13 +1,20 @@
+use std::{cell::RefCell, rc::Rc};
+
 use csv::StringRecord;
 use either::Either;
 
 use crate::{
     builtins::parse,
     commands::{Argument, DataTypes, GenericIterBox},
+    global_params::GlobalParams,
     util,
 };
 
-pub fn read(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
+pub fn read(
+    m_args: Vec<Argument>,
+    input: GenericIterBox,
+    params: Rc<RefCell<GlobalParams>>,
+) -> GenericIterBox {
     fn read_file(file: &str) -> impl Iterator<Item = StringRecord> {
         let reader = csv::ReaderBuilder::new()
             .has_headers(false)
@@ -35,7 +42,7 @@ pub fn read(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
                     .collect()
             });
 
-            Box::new(parse(vec![tup], Box::new(input.chain(it))))
+            Box::new(parse(vec![tup], Box::new(input.chain(it)), params))
         }
         args => {
             panic!("Wrong arguments: {:?}", args);
@@ -43,7 +50,11 @@ pub fn read(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     }
 }
 
-pub fn write(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
+pub fn write(
+    m_args: Vec<Argument>,
+    input: GenericIterBox,
+    _: Rc<RefCell<GlobalParams>>,
+) -> GenericIterBox {
     match util::to_1_tuple(m_args) {
         (Argument::String(file),) => {
             let mut writer = csv::WriterBuilder::new()
@@ -64,21 +75,27 @@ pub fn write(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     }
 }
 
-pub fn print(args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
+pub fn print(
+    args: Vec<Argument>,
+    input: GenericIterBox,
+    params: Rc<RefCell<GlobalParams>>,
+) -> GenericIterBox {
     if args.len() > 0 {
         panic!("Invalid arguments: {:?}", args);
     }
 
-    Box::new(input.map(|row| {
-        print!("[");
+    Box::new(input.map(move |row| {
+        let mut param_mut_ref = params.borrow_mut();
+        use std::fmt::Write;
+        write!(param_mut_ref.output, "[").unwrap();
         for (i, elem) in row.iter().enumerate() {
             if i == 0 {
-                print!("{}", elem);
+                write!(param_mut_ref.output, "{}", elem).unwrap();
             } else {
-                print!(", {}", elem);
+                write!(param_mut_ref.output, ", {}", elem).unwrap();
             }
         }
-        println!("]");
+        writeln!(param_mut_ref.output, "]").unwrap();
 
         row
     }))

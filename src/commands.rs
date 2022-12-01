@@ -1,8 +1,9 @@
 /// Command Defintions and Types
 use core::fmt;
-use std::{ops::Add, str::FromStr};
+use std::{cell::RefCell, ops::Add, rc::Rc, str::FromStr};
 
 use crate::{
+    global_params::GlobalParams,
     parse::{arg_parser, IdentParser, Parser, Rule},
     rule::MatchPattern,
 };
@@ -203,4 +204,4 @@ impl Add for DataTypes {
 pub type RowType = Vec<DataTypes>;
 pub type GenericIterBox = Box<dyn Iterator<Item = RowType>>;
 
-pub type Command = fn(Vec<Argument>, GenericIterBox) -> GenericIterBox;
+pub type Command = fn(Vec<Argument>, GenericIterBox, Rc<RefCell<GlobalParams>>) -> GenericIterBox;

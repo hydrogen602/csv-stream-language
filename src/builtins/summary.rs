@@ -1,7 +1,8 @@
-use std::mem::take;
+use std::{cell::RefCell, mem::take, rc::Rc};
 
 use crate::{
     commands::{Argument, DataTypes, GenericIterBox},
+    global_params::GlobalParams,
     util,
 };
 
@@ -26,7 +27,11 @@ where
     }
 }
 
-pub fn sum(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
+pub fn sum(
+    m_args: Vec<Argument>,
+    input: GenericIterBox,
+    _: Rc<RefCell<GlobalParams>>,
+) -> GenericIterBox {
     let pre_index = match util::to_1_tuple(m_args) {
         (Argument::Int(pre_index),) => pre_index,
         args => {

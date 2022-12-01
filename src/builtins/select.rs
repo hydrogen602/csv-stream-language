@@ -1,10 +1,17 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::{
     commands::{Argument, DataTypes, GenericIterBox, RowType},
+    global_params::GlobalParams,
     rule::MatchPattern,
     util,
 };
 
-pub fn drop(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
+pub fn drop(
+    m_args: Vec<Argument>,
+    input: GenericIterBox,
+    _: Rc<RefCell<GlobalParams>>,
+) -> GenericIterBox {
     match util::get_args(m_args) {
         [Argument::Enum(op), Argument::Int(n)] if op == "head" => {
             Box::new(input.skip(n as usize)) //input
@@ -39,7 +46,11 @@ impl<I: Iterator<Item = RowType>> Iterator for ColumnShuffle<I> {
     }
 }
 
-pub fn columns(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
+pub fn columns(
+    m_args: Vec<Argument>,
+    input: GenericIterBox,
+    _: Rc<RefCell<GlobalParams>>,
+) -> GenericIterBox {
     match util::to_1_tuple(m_args) {
         (Argument::Tuple(order_arg),) => {
             let order: Vec<_> = order_arg
@@ -66,7 +77,11 @@ pub fn columns(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     }
 }
 
-pub fn parse(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
+pub fn parse(
+    m_args: Vec<Argument>,
+    input: GenericIterBox,
+    _: Rc<RefCell<GlobalParams>>,
+) -> GenericIterBox {
     // NaiveDate::parse_from_str
     match util::to_1_tuple(m_args) {
         (Argument::Tuple(args),) => {
@@ -106,7 +121,11 @@ pub fn parse(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     }
 }
 
-pub fn filter(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
+pub fn filter(
+    m_args: Vec<Argument>,
+    input: GenericIterBox,
+    _: Rc<RefCell<GlobalParams>>,
+) -> GenericIterBox {
     let (pre_index, pattern) = match util::to_2_tuple(m_args) {
         (Argument::Int(pre_index), Argument::Pattern(pattern)) => (pre_index, pattern),
         (Argument::Int(pre_index), Argument::String(ref pattern)) => {
@@ -127,7 +146,11 @@ pub fn filter(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
     }))
 }
 
-pub fn classify(m_args: Vec<Argument>, input: GenericIterBox) -> GenericIterBox {
+pub fn classify(
+    m_args: Vec<Argument>,
+    input: GenericIterBox,
+    _: Rc<RefCell<GlobalParams>>,
+) -> GenericIterBox {
     match util::to_2_tuple(m_args) {
         (Argument::Int(pre_index), Argument::Tuple(args)) => {
             assert!(pre_index > 0, "index has to be greater than 0");
