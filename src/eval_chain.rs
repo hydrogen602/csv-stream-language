@@ -29,7 +29,7 @@ impl Chain {
         stream.count() // consume the iterator
     }
 
-    pub fn execute_collect_out(self: Self) -> (usize, String, HashMap<String, Vec<u8>>) {
+    pub fn execute_collect_out(self: Self) -> (usize, String, HashMap<String, String>) {
         let params = Rc::new(RefCell::new(GlobalParams::default().use_buffer().capture_write_files()));
 
         let stream: GenericIterBox = self
@@ -42,7 +42,10 @@ impl Chain {
         let s = stream.count();
         let out = params.borrow_mut().get_buffer().unwrap();
         let written_data = params.borrow_mut().get_out_files().unwrap();
-        (s, out, written_data) // consume the iterator
+        (s, out, written_data.into_iter().map(|(k,v)| {
+            (k,String::from_utf8_lossy(&v).into_owned())
+        }
+        ).collect()) // consume the iterator
     }
 }
 
@@ -69,7 +72,7 @@ mod tests {
             "[0]\n[1]\n[2]\n[3]\n[4]\n[5]\n[6]\n[7]\n[8]\n[9]\n[10]\n[11]\n[12]\n[13]\n[14]\n[15]\n[16]\n[17]\n[18]\n[19]\n[190]\n"
             
         );
-        assert_eq!(written_files["test.csv"], "190\n".as_bytes());
-        assert_eq!(written_files["numbers.csv"], "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n".as_bytes())
+        assert_eq!(written_files["test.csv"], "190\n");
+        assert_eq!(written_files["numbers.csv"], "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n")
     }
 }
