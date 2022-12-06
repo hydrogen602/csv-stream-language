@@ -122,7 +122,7 @@ pub fn parse_str(s: &str, cmd_line_args: &[&str], namespace: Option<impl NameSpa
 
         let cmd = cmds
             .get_command(f_name)
-            .expect(&format!("Command {} not found", f_name));
+            .unwrap_or_else(|| panic!("Command {} not found", f_name));
 
         chain.push(cmd, args);
     }
@@ -130,5 +130,5 @@ pub fn parse_str(s: &str, cmd_line_args: &[&str], namespace: Option<impl NameSpa
     //println!("Parse done");
 
     //chain.execute();
-    return chain;
+    chain
 }

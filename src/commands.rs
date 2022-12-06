@@ -24,7 +24,7 @@ pub enum Argument {
 }
 
 impl Argument {
-    pub fn substitute_cmd_line_arg(self: Self, cmd_line_args: &[&str]) -> Self {
+    pub fn substitute_cmd_line_arg(self, cmd_line_args: &[&str]) -> Self {
         match self {
             Self::CmdLineArg(num) => {
                 if num >= cmd_line_args.len() as u32 {
@@ -99,7 +99,7 @@ impl From<DataTypes> for i32 {
     fn from(d: DataTypes) -> Self {
         match d {
             DataTypes::Empty => 0,
-            DataTypes::String(s) => s.parse().expect(&format!("could not parse {} as int", s)),
+            DataTypes::String(s) => s.parse().unwrap_or_else(|_| panic!("could not parse {} as int", s)),
             DataTypes::Int(i) => i,
             DataTypes::Float(f) => f as i32,
             DataTypes::NaiveDate(_) => panic!("could not parse date as int"),
@@ -111,7 +111,7 @@ impl From<DataTypes> for f64 {
     fn from(d: DataTypes) -> Self {
         match d {
             DataTypes::Empty => 0.,
-            DataTypes::String(s) => s.parse().expect(&format!("could not parse {} as float", s)),
+            DataTypes::String(s) => s.parse().unwrap_or_else(|_| panic!("could not parse {} as float", s)),
             DataTypes::Int(i) => i as f64,
             DataTypes::Float(f) => f,
             DataTypes::NaiveDate(_) => panic!("could not parse date as float"),
@@ -124,7 +124,7 @@ impl From<DataTypes> for NaiveDate {
         match d {
             // TODO: get rid of panics
             DataTypes::String(s) => NaiveDate::parse_from_str(&s, "%Y-%m-%d")
-                .expect(&format!("Could not parse {} as date", s)),
+                .unwrap_or_else(|_| panic!("Could not parse {} as date", s)),
             DataTypes::NaiveDate(d) => d,
             _ => panic!(),
         }

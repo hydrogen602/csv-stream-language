@@ -22,8 +22,8 @@ pub fn read(
             .from_path(file)
             .expect("Could not open file for reading");
 
-        let x = reader.into_records().map(|x| x.expect("Read failed"));
-        x
+        
+        reader.into_records().map(|x| x.expect("Read failed"))
     }
 
     match util::get_args_2_sizes(m_args) {
@@ -99,7 +99,7 @@ pub fn print(
     input: GenericIterBox,
     params: Rc<RefCell<GlobalParams>>,
 ) -> GenericIterBox {
-    if args.len() > 0 {
+    if !args.is_empty() {
         panic!("Invalid arguments: {:?}", args);
     }
 

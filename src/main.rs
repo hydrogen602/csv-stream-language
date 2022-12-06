@@ -17,7 +17,7 @@ fn main() {
         [_, ref cmd_line_args @ ..] => {
             let file = cmd_line_args[0];
             let file_content =
-                read_to_string(file).expect(&format!("Could not read file: {}", file));
+                read_to_string(file).unwrap_or_else(|_| panic!("Could not read file: {}", file));
 
             let chain = parse_str(&file_content, cmd_line_args, None::<BuiltinNamespace>);
 

@@ -60,9 +60,9 @@ pub fn columns(
                         if n <= 0 {
                             panic!("Index columns start at 1");
                         }
-                        let index = (n - 1) as usize; // n > 0, so n-1 >= 0
+                         // n > 0, so n-1 >= 0
 
-                        index
+                        (n - 1) as usize
                     } else {
                         panic!("Invalid argument: {:?}", e);
                     }

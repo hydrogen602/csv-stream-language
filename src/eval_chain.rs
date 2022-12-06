@@ -3,7 +3,7 @@ use crate::{
     commands::{Argument, Command, GenericIterBox},
     global_params::GlobalParams,
 };
-use std::{cell::RefCell, iter::Empty, rc::Rc, collections::HashMap};
+use std::{cell::RefCell, rc::Rc, collections::HashMap};
 
 pub struct Chain {
     chain: Vec<(Command, Vec<Argument>)>,
@@ -16,26 +16,26 @@ impl Chain {
 }
 
 impl Chain {
-    pub fn execute(self: Self) -> usize {
+    pub fn execute(self) -> usize {
         let params = Rc::new(RefCell::new(GlobalParams::default()));
 
         let stream: GenericIterBox = self
             .chain
             .into_iter()
-            .fold(Box::new(Empty::default()), |stream, (cmd, args)| {
+            .fold(Box::new(std::iter::empty()), |stream, (cmd, args)| {
                 cmd(args, stream, params.clone())
             });
 
         stream.count() // consume the iterator
     }
 
-    pub fn execute_collect_out(self: Self) -> (usize, String, HashMap<String, String>) {
+    pub fn execute_collect_out(self) -> (usize, String, HashMap<String, String>) {
         let params = Rc::new(RefCell::new(GlobalParams::default().use_buffer().capture_write_files()));
 
         let stream: GenericIterBox = self
             .chain
             .into_iter()
-            .fold(Box::new(Empty::default()), |stream, (cmd, args)| {
+            .fold(Box::new(std::iter::empty()), |stream, (cmd, args)| {
                 cmd(args, stream, params.clone())
             });
 

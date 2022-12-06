@@ -23,5 +23,5 @@ pub fn range(
             panic!("Wrong arguments: {:?}", args);
         }
     };
-    return Box::new(input.chain(it));
+    Box::new(input.chain(it))
 }

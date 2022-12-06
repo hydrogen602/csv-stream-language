@@ -49,7 +49,7 @@ impl Error for CommandExistsError {}
 
 impl NameSpace for BuiltinNamespace {
     fn get_command(&self, s: &str) -> Option<Command> {
-        self.commands.get(s).map(|e| *e)
+        self.commands.get(s).copied()
     }
 }
 

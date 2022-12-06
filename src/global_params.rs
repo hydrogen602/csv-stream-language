@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::stdout, mem, rc::Rc};
+use std::{collections::HashMap, io::stdout, rc::Rc};
 
 pub mod inner_structs {
     use std::cell::RefCell;
@@ -83,7 +83,7 @@ impl GlobalParams {
 
     pub fn get_buffer(&mut self) -> Option<String> {
         if let inner_structs::Output::BUFFER(ref mut s) = self.output {
-            Some(mem::replace(s, String::new()))
+            Some(std::mem::take(s))
         } else {
             None
         }
@@ -93,7 +93,7 @@ impl GlobalParams {
         match &mut self.out_files {
             inner_structs::OutFiles::FILESYS(_) => None,
             inner_structs::OutFiles::CAPTURE(m) => {
-                let extracted = mem::replace(m, HashMap::new());
+                let extracted = std::mem::take(m);
                 let files: HashMap<String, Vec<u8>> = extracted
                     .into_iter()
                     .map(|(k, v)| {
