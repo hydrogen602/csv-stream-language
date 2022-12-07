@@ -99,7 +99,9 @@ impl From<DataTypes> for i32 {
     fn from(d: DataTypes) -> Self {
         match d {
             DataTypes::Empty => 0,
-            DataTypes::String(s) => s.parse().unwrap_or_else(|_| panic!("could not parse {} as int", s)),
+            DataTypes::String(s) => s
+                .parse()
+                .unwrap_or_else(|_| panic!("could not parse {} as int", s)),
             DataTypes::Int(i) => i,
             DataTypes::Float(f) => f as i32,
             DataTypes::NaiveDate(_) => panic!("could not parse date as int"),
@@ -111,7 +113,9 @@ impl From<DataTypes> for f64 {
     fn from(d: DataTypes) -> Self {
         match d {
             DataTypes::Empty => 0.,
-            DataTypes::String(s) => s.parse().unwrap_or_else(|_| panic!("could not parse {} as float", s)),
+            DataTypes::String(s) => s
+                .parse()
+                .unwrap_or_else(|_| panic!("could not parse {} as float", s)),
             DataTypes::Int(i) => i as f64,
             DataTypes::Float(f) => f,
             DataTypes::NaiveDate(_) => panic!("could not parse date as float"),
@@ -205,3 +209,30 @@ pub type RowType = Vec<DataTypes>;
 pub type GenericIterBox = Box<dyn Iterator<Item = RowType>>;
 
 pub type Command = fn(Vec<Argument>, GenericIterBox, Rc<RefCell<GlobalParams>>) -> GenericIterBox;
+
+// pub struct WithExtra<A, I>
+// where
+//     I: Iterator<Item = RowType>,
+// {
+//     extra: A,
+//     it: I,
+// }
+
+// impl<A, I> WithExtra<A, I>
+// where
+//     I: Iterator<Item = RowType>,
+// {
+//     pub fn new(extra: A, it: I) -> Self {
+//         Self { extra, it }
+//     }
+// }
+
+// impl<A, I> Iterator for WithExtra<A, I>
+// where
+//     I: Iterator<Item = RowType>,
+// {
+//     type Item = RowType;
+//     fn next(&mut self) -> Option<Self::Item> {
+//         self.it.next()
+//     }
+// }

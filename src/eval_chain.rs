@@ -29,8 +29,16 @@ impl Chain {
         stream.count() // consume the iterator
     }
 
-    pub fn execute_collect_out(self) -> (usize, String, HashMap<String, String>) {
-        let params = Rc::new(RefCell::new(GlobalParams::default().use_buffer().capture_write_files()));
+    pub fn execute_collect_out(self, stdin: Option<String>) -> (usize, String, HashMap<String, String>) {
+        let params = Rc::new(RefCell::new({
+            let mut params = GlobalParams::default().use_buffer().capture_write_files();
+            if let Some(stdin) = stdin {
+                params = params.set_string(stdin);
+            }
+        
+            params
+        }
+        ));
 
         let stream: GenericIterBox = self
             .chain
@@ -66,7 +74,7 @@ mod tests {
             &[][..],
             None::<BuiltinNamespace>,
         );
-        let (_, result, written_files) = chain.execute_collect_out();
+        let (_, result, written_files) = chain.execute_collect_out(None);
         assert_eq!(
             result,
             "[0]\n[1]\n[2]\n[3]\n[4]\n[5]\n[6]\n[7]\n[8]\n[9]\n[10]\n[11]\n[12]\n[13]\n[14]\n[15]\n[16]\n[17]\n[18]\n[19]\n[190]\n"

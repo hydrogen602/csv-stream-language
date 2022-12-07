@@ -19,7 +19,12 @@ impl Default for BuiltinNamespace {
         };
         let mut helper = |s: &str, f| n.commands.insert(s.into(), f);
 
+        #[cfg(not(target_family = "wasm"))]
         helper("read", builtins::read);
+
+        #[cfg(target_family = "wasm")]
+        helper("read", builtins::read_in);
+
         helper("drop", builtins::drop);
         helper("print", builtins::print);
         helper("columns", builtins::columns);

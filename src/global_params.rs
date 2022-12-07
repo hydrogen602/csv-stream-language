@@ -61,14 +61,21 @@ pub mod inner_structs {
 pub struct GlobalParams {
     pub output: inner_structs::Output,
     pub out_files: inner_structs::OutFiles,
+    pub input: Option<String>,
 }
 
 impl GlobalParams {
     pub fn new() -> Self {
-        GlobalParams {
+        Self {
             output: inner_structs::Output::STDOUT(stdout()),
             out_files: inner_structs::OutFiles::FILESYS(HashMap::new()),
+            input: None,
         }
+    }
+
+    pub fn set_string(mut self, s: String) -> Self {
+        self.input = Some(s);
+        self
     }
 
     pub fn use_buffer(mut self) -> Self {
