@@ -1,13 +1,13 @@
-use std::{borrow::Borrow, cell::RefCell, mem, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use csv::StringRecord;
 use either::Either;
 
 use crate::{
     builtins::parse,
-    commands::{Argument, DataTypes, GenericIterBox},
+    commands::{Argument, DataTypes, GenericIterBox, RowType},
     global_params::GlobalParams,
-    util::{self, OwnedStringRead},
+    util::{self, GeneralError},
 };
 
 #[cfg(not(target_family = "wasm"))]
@@ -57,13 +57,13 @@ pub fn read(
 //     pub reader: Option<csv::Reader<&[u8]>>,
 // }
 
-#[cfg(target_family = "wasm")]
+// #[cfg(target_family = "wasm")]
 pub fn read_in(
     m_args: Vec<Argument>,
     input: GenericIterBox,
     params: Rc<RefCell<GlobalParams>>,
 ) -> GenericIterBox {
-    fn read_file<'a, R>(file: R) -> impl Iterator<Item = StringRecord> + 'a
+    fn read_file<'a, R>(file: R) -> impl Iterator<Item = RowType> + 'a
     where
         R: std::io::Read + 'a,
     {
@@ -72,37 +72,46 @@ pub fn read_in(
             .flexible(true)
             .from_reader(file);
 
-        let x = reader.into_records().map(|x| x.expect("Read failed"));
-        x
+        reader.into_records().map(|m_sr| {
+            m_sr.and_then(|sr| {
+                sr.into_iter()
+                    .map(|s| Ok(DataTypes::String(s.to_string())))
+                    .collect()
+            })
+            .map_err(GeneralError::from)
+        })
     }
 
+    use std::mem;
+    use util::OwnedStringRead;
+
+    let mstdin = mem::take(&mut params.borrow_mut().input);
     match util::get_args_2_sizes(m_args) {
         Either::Left([]) => {
             // auto parse
-            let reader = OwnedStringRead::new(
-                mem::take(&mut params.borrow_mut().input).expect("No input string"),
-            );
+            match mstdin {
+                Some(stdin) => {
+                    let reader = OwnedStringRead::new(stdin);
 
-            let it = read_file(reader).map(|sr: StringRecord| {
-                sr.into_iter()
-                    .map(|s| DataTypes::String(s.to_string()))
-                    .collect()
-            });
+                    let it = read_file(reader);
 
-            Box::new(input.chain(it))
+                    Box::new(input.chain(it))
+                }
+                None => Box::new(input.chain(GeneralError::new("No input given".into()).iter())),
+            }
         }
         Either::Right([tup @ Argument::Tuple(_)]) => {
-            let reader = OwnedStringRead::new(
-                mem::take(&mut params.borrow_mut().input).expect("No input string"),
-            );
-            // custom parse
-            let it = read_file(reader).map(|sr: StringRecord| {
-                sr.into_iter()
-                    .map(|s| DataTypes::String(s.to_string()))
-                    .collect()
-            });
+            match mstdin {
+                Some(stdin) => {
+                    let reader = OwnedStringRead::new(stdin);
 
-            Box::new(parse(vec![tup], Box::new(input.chain(it)), params))
+                    let it = read_file(reader);
+
+                    Box::new(parse(vec![tup], Box::new(input.chain(it)), params))
+                }
+                None => Box::new(input.chain(GeneralError::new("No input given".into()).iter())),
+            }
+            // custom parse
         }
         args => {
             panic!("Wrong arguments: {:?}", args);
@@ -117,35 +126,21 @@ pub fn write(
 ) -> GenericIterBox {
     match util::to_1_tuple(m_args) {
         (Argument::String(file),) => {
-            // match &params.borrow().out_files {
-            //     FILESYS => {}
-            //     CAPTURE(m) => {}
-            // }
-
-            // let mut writer = match &params.borrow().out_files {
-            //     inner_structs::OutFiles::CAPTURE(m) => {
-            //         panic!()
-            //     }
-            //     inner_structs::OutFiles::FILESYS(m) => csv::WriterBuilder::new()
-            //         .flexible(true)
-            //         .from_path(file)
-            //         .expect("Could not open file for writing"),
-            // };
-
             let writer = params
                 .borrow_mut()
                 .out_files
                 .open_file(csv::WriterBuilder::new().flexible(true), &file);
 
-            Box::new(input.map(move |row| {
-                let x = row.iter().map(|x| x.to_string());
-                (match &writer {
-                    Either::Left(w) => w.borrow_mut().write_record(x),
-                    Either::Right(w) => w.borrow_mut().write_record(x),
-                })
-                .expect("Write failed");
+            Box::new(input.map(move |m_row| {
+                m_row.and_then(|row| {
+                    let x = row.iter().map(|x| x.to_string());
+                    (match &writer {
+                        Either::Left(w) => w.borrow_mut().write_record(x),
+                        Either::Right(w) => w.borrow_mut().write_record(x),
+                    })?;
 
-                row
+                    Ok(row)
+                })
             }))
         }
         args => {
@@ -163,19 +158,21 @@ pub fn print(
         panic!("Invalid arguments: {:?}", args);
     }
 
-    Box::new(input.map(move |row| {
+    Box::new(input.map(move |m_row| {
         let mut param_mut_ref = params.borrow_mut();
         use std::fmt::Write;
-        write!(param_mut_ref.output, "[").unwrap();
-        for (i, elem) in row.iter().enumerate() {
-            if i == 0 {
-                write!(param_mut_ref.output, "{}", elem).unwrap();
-            } else {
-                write!(param_mut_ref.output, ", {}", elem).unwrap();
+        write!(param_mut_ref.output, "[")?;
+        m_row.and_then(|row| {
+            for (i, elem) in row.iter().enumerate() {
+                if i == 0 {
+                    write!(param_mut_ref.output, "{}", elem)?;
+                } else {
+                    write!(param_mut_ref.output, ", {}", elem)?;
+                }
             }
-        }
-        writeln!(param_mut_ref.output, "]").unwrap();
+            writeln!(param_mut_ref.output, "]")?;
 
-        row
+            Ok(row)
+        })
     }))
 }

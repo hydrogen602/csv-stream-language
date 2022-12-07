@@ -1,10 +1,12 @@
 use core::fmt;
-use std::{error::Error, fmt::Debug, mem};
+use std::{fmt::Debug, iter::Once, mem};
 
 use either::Either;
 
+use crate::commands::RowType;
+
 #[derive(Debug, Clone)]
-pub struct ParseError(String);
+pub struct ParseError(pub String);
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -12,7 +14,46 @@ impl fmt::Display for ParseError {
     }
 }
 
-impl Error for ParseError {}
+impl std::error::Error for ParseError {}
+
+#[derive(Debug, Clone)]
+pub struct GeneralError(pub String);
+
+impl GeneralError {
+    pub fn new(s: String) -> Self {
+        Self(s)
+    }
+
+    pub fn iter(self) -> Once<RowType> {
+        std::iter::once(RowType::Err(self))
+    }
+}
+
+impl fmt::Display for GeneralError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "GeneralError: {}", self.0)
+    }
+}
+
+impl From<GeneralError> for RowType {
+    fn from(e: GeneralError) -> Self {
+        Self::Err(e)
+    }
+}
+
+impl From<core::fmt::Error> for GeneralError {
+    fn from(_: core::fmt::Error) -> Self {
+        GeneralError::new("core::fmt::Error".into())
+    }
+}
+
+impl From<csv::Error> for GeneralError {
+    fn from(e: csv::Error) -> Self {
+        GeneralError::new(format!("csv::Error: {}", e))
+    }
+}
+
+impl std::error::Error for GeneralError {}
 
 /// TODO: how to get accumulator
 pub struct MapFold<I, F, G, C> {

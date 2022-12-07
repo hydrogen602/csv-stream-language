@@ -6,9 +6,9 @@ use crate::{
     global_params::GlobalParams,
     parse::{arg_parser, IdentParser, Parser, Rule},
     rule::MatchPattern,
+    util::GeneralError,
 };
 use chrono::NaiveDate;
-use pest::error::Error;
 use pest::iterators::Pairs;
 
 #[derive(Debug)]
@@ -36,7 +36,7 @@ impl Argument {
 
                 let value = &cmd_line_args[num as usize];
 
-                let parse_fail = |e: Error<Rule>| -> Pairs<Rule> {
+                let parse_fail = |e: pest::error::Error<Rule>| -> Pairs<Rule> {
                     eprintln!("{}", e);
                     panic!("Cannot parse command line argument: {}", value);
                 };
@@ -205,7 +205,7 @@ impl Add for DataTypes {
     }
 }
 
-pub type RowType = Vec<DataTypes>;
+pub type RowType = Result<Vec<DataTypes>, GeneralError>;
 pub type GenericIterBox = Box<dyn Iterator<Item = RowType>>;
 
 pub type Command = fn(Vec<Argument>, GenericIterBox, Rc<RefCell<GlobalParams>>) -> GenericIterBox;

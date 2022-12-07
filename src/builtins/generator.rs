@@ -1,9 +1,9 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    commands::{Argument, DataTypes, GenericIterBox},
+    commands::{Argument, DataTypes, GenericIterBox, RowType},
     global_params::GlobalParams,
-    util,
+    util::{self, GeneralError},
 };
 
 pub fn range(
@@ -11,17 +11,21 @@ pub fn range(
     input: GenericIterBox,
     _: Rc<RefCell<GlobalParams>>,
 ) -> GenericIterBox {
-    fn helper(e: i32) -> Vec<DataTypes> {
-        vec![DataTypes::Int(e)]
+    fn helper(e: i32) -> RowType {
+        Ok(vec![DataTypes::Int(e)])
     }
 
     use either::Either::*;
-    let it = match util::get_args_2_sizes(m_args) {
-        Left([Argument::Int(stop)]) => (0..stop).map(helper),
-        Right([Argument::Int(start), Argument::Int(stop)]) => (start..stop).map(helper),
-        args => {
-            panic!("Wrong arguments: {:?}", args);
+    match util::get_args_2_sizes(m_args) {
+        Left([Argument::Int(stop)]) => Box::new(input.chain((0..stop).map(helper))),
+        Right([Argument::Int(start), Argument::Int(stop)]) => {
+            Box::new(input.chain((start..stop).map(helper)))
         }
-    };
-    Box::new(input.chain(it))
+        args => Box::new(
+            input.chain(std::iter::once(RowType::Err(GeneralError::new(format!(
+                "Wrong arguments: {:?}",
+                args
+            ))))),
+        ),
+    }
 }
