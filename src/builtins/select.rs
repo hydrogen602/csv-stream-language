@@ -1,10 +1,10 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{borrow::Borrow, cell::RefCell, rc::Rc};
 
 use crate::{
     commands::{Argument, DataTypes, GenericIterBox, RowType},
     global_params::GlobalParams,
     rule::MatchPattern,
-    util,
+    util::{self, GeneralError},
 };
 
 pub fn drop(
@@ -42,7 +42,7 @@ impl<I: Iterator<Item = RowType>> Iterator for ColumnShuffle<I> {
     fn next(&mut self) -> Option<Self::Item> {
         self.it
             .next()
-            .map(|row| self.order.iter().map(|&i| row[i].clone()).collect())
+            .map(|mrow| mrow.map(|row| self.order.iter().map(|&i| row[i].clone()).collect()))
     }
 }
 
@@ -60,7 +60,7 @@ pub fn columns(
                         if n <= 0 {
                             panic!("Index columns start at 1");
                         }
-                         // n > 0, so n-1 >= 0
+                        // n > 0, so n-1 >= 0
 
                         (n - 1) as usize
                     } else {
@@ -97,22 +97,26 @@ pub fn parse(
                 .collect();
             // let types = vec![1];
 
-            Box::new(input.map(move |row| {
-                //let x = types;
-                if row.len() != types.len() {
-                    panic!("Error: Parse arguments don't match columns")
-                }
-
-                row.into_iter()
-                    .zip(types.iter())
-                    .map(|(data, ty)| match ty.as_str() {
-                        "int" => DataTypes::Int(data.into()),
-                        "float" => DataTypes::Float(data.into()),
-                        "string" => DataTypes::String(data.into()),
-                        "date" => DataTypes::NaiveDate(data.into()),
-                        _ => panic!("unknown type: {}", ty),
-                    })
-                    .collect()
+            Box::new(input.map(move |mrow| {
+                mrow.and_then(|row| {
+                    //let x = types;
+                    if row.len() != types.len() {
+                        Err(GeneralError::new(
+                            "Error: Parse arguments don't match columns".into(),
+                        ))
+                    } else {
+                        row.into_iter()
+                            .zip(types.iter())
+                            .map(|(data, ty)| match ty.as_str() {
+                                "int" => Ok(DataTypes::Int(data.into())),
+                                "float" => Ok(DataTypes::Float(data.into())),
+                                "string" => Ok(DataTypes::String(data.into())),
+                                "date" => Ok(DataTypes::NaiveDate(data.into())),
+                                _ => Err(GeneralError::new(format!("unknown type: {}", ty))),
+                            })
+                            .collect()
+                    }
+                })
             }))
         }
         args => {
@@ -140,9 +144,13 @@ pub fn filter(
     assert!(pre_index > 0, "index has to be greater than 0");
     let index = (pre_index - 1) as usize;
 
-    Box::new(input.filter(move |row| {
-        let elem = &row[index];
-        pattern.is_match(elem)
+    Box::new(input.filter(move |mrow| {
+        mrow.as_ref()
+            .map(|row| {
+                let elem = &row[index];
+                pattern.is_match(elem)
+            })
+            .unwrap_or(true)
     }))
 }
 
@@ -167,24 +175,26 @@ pub fn classify(
                 })
                 .collect();
 
-            Box::new(input.map(move |mut row| {
-                let val = &row[index];
+            Box::new(input.map(move |mrow| {
+                mrow.map(|mut row| {
+                    let val = &row[index];
 
-                let label = rules
-                    .iter()
-                    .find_map(|(r, label)| {
-                        if r.is_match(val) {
-                            Some(label.clone())
-                        } else {
-                            None
-                        }
-                    })
-                    .unwrap_or(DataTypes::String("".to_string()));
+                    let label = rules
+                        .iter()
+                        .find_map(|(r, label)| {
+                            if r.is_match(val) {
+                                Some(label.clone())
+                            } else {
+                                None
+                            }
+                        })
+                        .unwrap_or(DataTypes::String("".to_string()));
 
-                //println!("{:?} {:?}", label, rules);
+                    //println!("{:?} {:?}", label, rules);
 
-                row.push(label);
-                row
+                    row.push(label);
+                    row
+                })
             }))
         }
         args => {

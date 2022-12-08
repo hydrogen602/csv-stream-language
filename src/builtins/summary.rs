@@ -43,12 +43,16 @@ pub fn sum(
     let index = (pre_index - 1) as usize;
 
     Box::new(LazyEval::new(move || {
-        let elem = input.fold(DataTypes::Int(0), |d, mut row| {
-            let e = take(&mut row[index]);
+        let elem = input.fold(Ok(DataTypes::Int(0)), |md, mrow| {
+            md.and_then(|d| {
+                mrow.map(|mut row| {
+                    let e = take(&mut row[index]);
 
-            d + e
+                    d + e
+                })
+            })
         });
 
-        vec![elem]
+        elem.map(|e| vec![e])
     }))
 }
